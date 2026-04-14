@@ -17,6 +17,8 @@ const userSchema = new mongoose.Schema({
   plan_expires_at: { type: Date, default: null },
   google_id:   { type: String, default: null },
   last_login:  { type: Date, default: null },
+  suspension_reason: { type: String, default: null },
+  suspended_at: { type: Date, default: null },
 }, { timestamps: true })
 
 userSchema.pre('save', async function (next) {

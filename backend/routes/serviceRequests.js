@@ -4,11 +4,11 @@ const { protect } = require('../middleware/auth')
 
 router.use(protect)
 
-router.post('/', ctrl.createRequest)
-router.get('/my/', ctrl.myRequests)
-router.get('/:id/', ctrl.getRequest)
-router.patch('/:id/', ctrl.updateRequest)
-router.post('/:id/cancel/', ctrl.cancelRequest)
-router.post('/:id/respond/', ctrl.respondToRequest)
+router.post('/', ctrl.createBooking)
+router.get('/my/', ctrl.myBookings)
+router.get('/provider/jobs/', ctrl.providerJobs)
+router.get('/:id/', ctrl.getBooking)
+router.patch('/:id/accept/', ctrl.acceptBooking)
+router.patch('/:id/status/', ctrl.updateBookingStatus)
 
 module.exports = router

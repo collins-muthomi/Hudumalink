@@ -19,6 +19,9 @@ const NAV = {
   ],
   provider: [
     { to: '/dashboard/provider', label: 'Dashboard', icon: 'grid' },
+    { to: '/dashboard/provider/services', label: 'My Services', icon: 'tool' },
+    { to: '/dashboard/provider/open-requests', label: 'Open Requests', icon: 'clipboard' },
+    { to: '/dashboard/provider/jobs', label: 'Jobs', icon: 'package' },
     { to: '/dashboard/provider/bookings', label: 'Bookings', icon: 'calendar' },
     { to: '/dashboard/provider/verification', label: 'Verification', icon: 'shield' },
     { to: '/wallet', label: 'Earnings', icon: 'wallet' },

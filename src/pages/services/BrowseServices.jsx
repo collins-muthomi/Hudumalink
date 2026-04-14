@@ -110,7 +110,7 @@ export default function BrowseServices() {
         {loading && page === 1
           ? Array(6).fill(0).map((_, i) => <SkeletonCard key={i} />)
           : services.map(s => (
-            <Link key={s.id} to={`/providers/${s.provider_id || s.id}`} className="card-hover p-5 block group">
+            <Link key={s._id || s.id} to={`/providers/${s.provider_id || s.id}`} className="card-hover p-5 block group">
               {s.image && (
                 <img src={s.image} alt={s.title} className="w-full h-36 object-cover rounded-xl mb-4" />
               )}

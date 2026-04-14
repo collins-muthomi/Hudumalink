@@ -47,9 +47,11 @@ exports.getStats = async (req, res) => {
 
 // GET /api/admin/users/
 exports.getUsers = async (req, res) => {
-  const { search, role, page = 1, limit = 20 } = req.query
+  const { search, role, status, page = 1, limit = 20 } = req.query
   const filter = {}
   if (role) filter.role = role
+  if (status === 'active') filter.is_active = true
+  if (status === 'suspended') filter.is_active = false
   if (search) filter.$or = [
     { first_name: { $regex: search, $options: 'i' } },
     { last_name: { $regex: search, $options: 'i' } },
@@ -66,7 +68,34 @@ exports.updateUser = async (req, res) => {
   if (!user) return res.status(404).json({ detail: 'User not found.' })
   const allowed = ['is_active', 'role', 'is_verified', 'plan']
   allowed.forEach(k => { if (req.body[k] !== undefined) user[k] = req.body[k] })
+
+  if (req.body.is_active === false) {
+    user.suspension_reason = req.body.suspension_reason || 'Suspended for violating company rules.'
+    user.suspended_at = new Date()
+  }
+
+  if (req.body.is_active === true) {
+    user.suspension_reason = null
+    user.suspended_at = null
+  }
+
   await user.save()
+
+  if (req.body.is_active === false) {
+    await notify(user._id, {
+      type: 'system',
+      title: 'Account suspended',
+      message: `Your account has been suspended. Reason: ${user.suspension_reason}`,
+    })
+  }
+
+  if (req.body.is_active === true) {
+    await notify(user._id, {
+      type: 'system',
+      title: 'Account reactivated',
+      message: 'Your HudumaLink account has been reactivated.',
+    })
+  }
 
   await ActivityLog.create({
     user: req.user._id,

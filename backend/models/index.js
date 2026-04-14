@@ -55,6 +55,7 @@ const providerProfileSchema = new mongoose.Schema({
   experience_years:{ type: Number, default: 0 },
   bio:             { type: String, default: '' },
   location:        { type: String, default: 'Nyeri Town' },
+  profileImage:    { type: String, default: null },
   profile_photo:   { type: String, default: null },
   id_front:        { type: String, default: null },
   id_back:         { type: String, default: null },
@@ -101,6 +102,9 @@ const Booking = mongoose.model('Booking', bookingSchema)
 const reviewSchema = new mongoose.Schema({
   reviewer:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   reviewer_name: { type: String },
+  customer:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  provider:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  service:       { type: mongoose.Schema.Types.ObjectId, ref: 'Service', default: null },
   target_type:   { type: String, enum: ['provider', 'product', 'restaurant', 'driver'], required: true },
   target_id:     { type: mongoose.Schema.Types.ObjectId, required: true },
   rating:        { type: Number, required: true, min: 1, max: 5 },

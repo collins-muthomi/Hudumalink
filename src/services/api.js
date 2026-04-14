@@ -6,17 +6,15 @@ const api = axios.create({
   timeout: 15000,
 })
 
-// Request interceptor — attach token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('hl_token')
     if (token) config.headers.Authorization = `Bearer ${token}`
     return config
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 )
 
-// Response interceptor — handle 401
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -26,10 +24,9 @@ api.interceptors.response.use(
       window.location.href = '/login'
     }
     return Promise.reject(error)
-  }
+  },
 )
 
-// ─── Auth ───────────────────────────────────────────────
 export const authAPI = {
   register: (data) => api.post('/auth/register/', data),
   login: (data) => api.post('/auth/login/', data),
@@ -40,20 +37,33 @@ export const authAPI = {
   changePassword: (data) => api.post('/auth/change-password/', data),
 }
 
-// ─── Services ───────────────────────────────────────────
 export const servicesAPI = {
   list: (params) => api.get('/services/', { params }),
   detail: (id) => api.get(`/services/${id}/`),
   categories: () => api.get('/services/categories/'),
-  createRequest: (data) => api.post('/service-requests/', data),
-  myRequests: (params) => api.get('/service-requests/my/', { params }),
-  requestDetail: (id) => api.get(`/service-requests/${id}/`),
-  updateRequest: (id, data) => api.patch(`/service-requests/${id}/`, data),
-  cancelRequest: (id) => api.post(`/service-requests/${id}/cancel/`),
-  respond: (id, data) => api.post(`/service-requests/${id}/respond/`, data),
+  mine: () => api.get('/services/mine/'),
+  create: (data) => api.post('/services/', data),
+  update: (id, data) => api.patch(`/services/${id}/`, data),
 }
 
-// ─── Marketplace ────────────────────────────────────────
+export const requestsAPI = {
+  create: (data) => api.post('/requests/', data),
+  open: (params) => api.get('/requests/open/', { params }),
+  my: (params) => api.get('/requests/mine/', { params }),
+  detail: (id) => api.get(`/requests/${id}/`),
+  accept: (id) => api.patch(`/requests/${id}/accept/`),
+  updateStatus: (id, data) => api.patch(`/requests/${id}/status/`, data),
+}
+
+export const serviceBookingsAPI = {
+  create: (data) => api.post('/service-requests/', data),
+  my: (params) => api.get('/service-requests/my/', { params }),
+  detail: (id) => api.get(`/service-requests/${id}/`),
+  accept: (id) => api.patch(`/service-requests/${id}/accept/`),
+  updateStatus: (id, data) => api.patch(`/service-requests/${id}/status/`, data),
+  providerJobs: (params) => api.get('/service-requests/provider/jobs/', { params }),
+}
+
 export const marketplaceAPI = {
   list: (params) => api.get('/marketplace/products/', { params }),
   detail: (id) => api.get(`/marketplace/products/${id}/`),
@@ -67,7 +77,6 @@ export const marketplaceAPI = {
   orderDetail: (id) => api.get(`/marketplace/orders/${id}/`),
 }
 
-// ─── Food & Restaurants ─────────────────────────────────
 export const foodAPI = {
   restaurants: (params) => api.get('/food/restaurants/', { params }),
   restaurantDetail: (id) => api.get(`/food/restaurants/${id}/`),
@@ -88,7 +97,6 @@ export const restaurantOwnerAPI = {
   deleteMenuItem: (id) => api.delete(`/food/me/menu/${id}/`),
 }
 
-// ─── Delivery ───────────────────────────────────────────
 export const deliveryAPI = {
   register: (data) => api.post('/delivery/register/', data),
   profile: () => api.get('/delivery/profile/'),
@@ -100,7 +108,6 @@ export const deliveryAPI = {
   completeDelivery: (id) => api.post(`/delivery/${id}/complete/`),
 }
 
-// ─── Notifications ──────────────────────────────────────
 export const notificationsAPI = {
   list: (params) => api.get('/notifications/', { params }),
   markRead: (id) => api.patch(`/notifications/${id}/read/`),
@@ -109,23 +116,22 @@ export const notificationsAPI = {
   delete: (id) => api.delete(`/notifications/${id}/`),
 }
 
-// ─── Wallet ─────────────────────────────────────────────
 export const walletAPI = {
   balance: () => api.get('/wallet/balance/'),
   transactions: (params) => api.get('/wallet/transactions/', { params }),
   topup: (data) => api.post('/wallet/topup/', data),
   withdraw: (data) => api.post('/wallet/withdraw/', data),
   transfer: (data) => api.post('/wallet/transfer/', data),
+  payServiceBooking: (id) => api.post(`/wallet/service-bookings/${id}/pay/`),
+  payCustomerRequest: (id) => api.post(`/wallet/requests/${id}/pay/`),
 }
 
-// ─── Referrals ──────────────────────────────────────────
 export const referralAPI = {
   myCode: () => api.get('/referrals/my-code/'),
   stats: () => api.get('/referrals/stats/'),
   history: () => api.get('/referrals/history/'),
 }
 
-// ─── Provider ───────────────────────────────────────────
 export const providerAPI = {
   profile: (id) => api.get(`/providers/${id}/`),
   myProfile: () => api.get('/providers/me/'),
@@ -141,7 +147,6 @@ export const providerAPI = {
   earnings: (params) => api.get('/providers/me/earnings/', { params }),
 }
 
-// ─── Admin ──────────────────────────────────────────────
 export const adminAPI = {
   stats: () => api.get('/admin/stats/'),
   users: (params) => api.get('/admin/users/', { params }),
@@ -153,14 +158,12 @@ export const adminAPI = {
   activityLog: () => api.get('/admin/activity/'),
 }
 
-// ─── Reviews ────────────────────────────────────────────
 export const reviewsAPI = {
   list: (type, id) => api.get(`/reviews/${type}/${id}/`),
   create: (data) => api.post('/reviews/', data),
   myReviews: () => api.get('/reviews/mine/'),
 }
 
-// ─── Pricing Plans ──────────────────────────────────────
 export const plansAPI = {
   list: () => api.get('/plans/'),
   subscribe: (data) => api.post('/plans/subscribe/', data),

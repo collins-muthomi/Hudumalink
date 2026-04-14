@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken')
 const { customAlphabet } = require('nanoid')
 const { Notification, Wallet, Transaction } = require('../models/index')
+const User = require('../models/User')
 
 const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 8)
 
@@ -53,6 +54,13 @@ const notify = async (userId, { type = 'system', title, message = '', data = {} 
   } catch {}
 }
 
+const notifyAdmins = async (payload) => {
+  try {
+    const admins = await User.find({ role: 'admin', is_active: true }).select('_id')
+    await Promise.all(admins.map((admin) => notify(admin._id, payload)))
+  } catch {}
+}
+
 // ─── Wallet helpers ──────────────────────────────────────
 const getOrCreateWallet = async (userId) => {
   let wallet = await Wallet.findOne({ user: userId })
@@ -81,6 +89,6 @@ module.exports = {
   signToken, signRefreshToken, sendTokens,
   generateReferralCode,
   paginate, paginatedResponse,
-  notify,
+  notify, notifyAdmins,
   getOrCreateWallet, creditWallet, debitWallet,
 }

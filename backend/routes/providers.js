@@ -1,6 +1,6 @@
 const router = require('express').Router()
 const ctrl = require('../controllers/providerController')
-const { protect } = require('../middleware/auth')
+const { protect, requireRole } = require('../middleware/auth')
 const { upload } = require('../config/cloudinary')
 
 const verificationUpload = upload('verification').fields([
@@ -11,17 +11,17 @@ const verificationUpload = upload('verification').fields([
 ])
 
 // My provider routes (authenticated)
-router.get('/me/', protect, ctrl.getMyProfile)
-router.patch('/me/', protect, upload('profiles').single('profile_photo'), ctrl.updateMyProfile)
-router.get('/me/availability/', protect, ctrl.getAvailability)
-router.patch('/me/availability/', protect, ctrl.updateAvailability)
-router.get('/me/bookings/', protect, ctrl.getBookings)
-router.get('/me/dashboard/', protect, ctrl.getDashboard)
-router.get('/me/earnings/', protect, ctrl.getEarnings)
+router.get('/me/', protect, requireRole('provider'), ctrl.getMyProfile)
+router.patch('/me/', protect, requireRole('provider'), upload('profiles').single('profile_image'), ctrl.updateMyProfile)
+router.get('/me/availability/', protect, requireRole('provider'), ctrl.getAvailability)
+router.patch('/me/availability/', protect, requireRole('provider'), ctrl.updateAvailability)
+router.get('/me/bookings/', protect, requireRole('provider'), ctrl.getBookings)
+router.get('/me/dashboard/', protect, requireRole('provider'), ctrl.getDashboard)
+router.get('/me/earnings/', protect, requireRole('provider'), ctrl.getEarnings)
 
 // Verification
-router.post('/verification/', protect, verificationUpload, ctrl.uploadVerification)
-router.get('/verification/status/', protect, ctrl.verificationStatus)
+router.post('/verification/', protect, requireRole('provider'), verificationUpload, ctrl.uploadVerification)
+router.get('/verification/status/', protect, requireRole('provider'), ctrl.verificationStatus)
 
 // Public profile
 router.get('/:id/', ctrl.getProfile)

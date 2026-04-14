@@ -21,6 +21,7 @@ import AdminReportsPage from './pages/admin/AdminReportsPage'
 import BrowseServices from './pages/services/BrowseServices'
 import PostServiceRequest from './pages/services/PostServiceRequest'
 import ServiceRequestDetail from './pages/services/ServiceRequestDetail'
+import ServiceBookingDetail from './pages/services/ServiceBookingDetail'
 import MyRequests from './pages/services/MyRequests'
 import BrowseMarketplace from './pages/marketplace/BrowseMarketplace'
 import ProductDetail from './pages/marketplace/ProductDetail'
@@ -33,6 +34,9 @@ import Cart from './pages/food/Cart'
 import Checkout from './pages/food/Checkout'
 import ProviderVerification from './pages/provider/ProviderVerification'
 import BookingCalendar from './pages/provider/BookingCalendar'
+import OpenRequests from './pages/provider/OpenRequests'
+import ProviderJobs from './pages/provider/ProviderJobs'
+import ManageServices from './pages/provider/ManageServices'
 import RestaurantManagePage from './pages/restaurant/RestaurantManagePage'
 import DeliveryDriverRegistration from './pages/delivery/DeliveryDriverRegistration'
 import NotificationsPage from './pages/NotificationsPage'
@@ -123,9 +127,33 @@ export default function App() {
                     <Route path="/food/cart" element={<Cart />} />
                     <Route path="/food/checkout" element={<Checkout />} />
 
-                    <Route path="/dashboard/provider/verification" element={<ProviderVerification />} />
-                    <Route path="/dashboard/provider/bookings" element={<BookingCalendar />} />
+                    <Route path="/dashboard/provider/verification" element={
+                      <ProtectedRoute allowedRoles={['provider']}>
+                        <ProviderVerification />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/dashboard/provider/bookings" element={
+                      <ProtectedRoute allowedRoles={['provider']}>
+                        <BookingCalendar />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/dashboard/provider/open-requests" element={
+                      <ProtectedRoute allowedRoles={['provider']}>
+                        <OpenRequests />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/dashboard/provider/jobs" element={
+                      <ProtectedRoute allowedRoles={['provider']}>
+                        <ProviderJobs />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/dashboard/provider/services" element={
+                      <ProtectedRoute allowedRoles={['provider']}>
+                        <ManageServices />
+                      </ProtectedRoute>
+                    } />
                     <Route path="/providers/:id" element={<ProviderProfile />} />
+                    <Route path="/services/bookings/:id" element={<ServiceBookingDetail />} />
 
                     <Route path="/delivery/register" element={<DeliveryDriverRegistration />} />
 

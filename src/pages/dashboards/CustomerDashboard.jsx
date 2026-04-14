@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { servicesAPI, marketplaceAPI, foodAPI, walletAPI } from '../../services/api'
+import { requestsAPI, marketplaceAPI, walletAPI, serviceBookingsAPI } from '../../services/api'
 
 const SkeletonCard = () => (
   <div className="card p-5 space-y-3">
@@ -35,22 +35,37 @@ export default function CustomerDashboard() {
   const { user } = useAuth()
   const [stats, setStats] = useState(null)
   const [requests, setRequests] = useState([])
+  const [bookings, setBookings] = useState([])
   const [orders, setOrders] = useState([])
+  const [pendingConfirmations, setPendingConfirmations] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.allSettled([
       walletAPI.balance(),
-      servicesAPI.myRequests({ limit: 5 }),
+      requestsAPI.my({ limit: 5 }),
+      serviceBookingsAPI.my({ limit: 5 }),
       marketplaceAPI.myOrders({ limit: 5 }),
-    ]).then(([bal, reqs, ords]) => {
+    ]).then(([bal, reqs, booked, ords]) => {
+      const requestResults = reqs.status === 'fulfilled' ? (reqs.value.data.results || reqs.value.data) : []
+      const bookingResults = booked.status === 'fulfilled' ? (booked.value.data.results || booked.value.data) : []
       setStats({
         balance: bal.status === 'fulfilled' ? bal.value.data.balance : 0,
-        requests: reqs.status === 'fulfilled' ? reqs.value.data.count || reqs.value.data.results?.length || 0 : 0,
+        requests: requestResults.length,
+        bookings: bookingResults.length,
         orders: ords.status === 'fulfilled' ? ords.value.data.count || ords.value.data.results?.length || 0 : 0,
       })
-      setRequests(reqs.status === 'fulfilled' ? (reqs.value.data.results || reqs.value.data).slice(0, 4) : [])
+      setRequests(requestResults.slice(0, 4))
+      setBookings(bookingResults.slice(0, 4))
       setOrders(ords.status === 'fulfilled' ? (ords.value.data.results || ords.value.data).slice(0, 4) : [])
+      setPendingConfirmations([
+        ...requestResults
+          .filter(r => r.status === 'completion_requested')
+          .map(r => ({ type: 'request', id: r._id || r.id, title: r.title, provider: r.assigned_provider_name, to: `/services/request/${r._id || r.id}` })),
+        ...bookingResults
+          .filter(b => b.status === 'completion_requested')
+          .map(b => ({ type: 'booking', id: b._id || b.id, title: b.service_title || b.title, provider: b.provider_name, to: `/services/bookings/${b._id || b.id}` })),
+      ].slice(0, 5))
     }).finally(() => setLoading(false))
   }, [])
 
@@ -120,11 +135,11 @@ export default function CustomerDashboard() {
                 </div>
               ))
             ) : requests.length === 0 ? (
-              <div className="px-5 py-8 text-center">
-                <p className="text-3xl mb-2">📋</p>
-                <p className="text-sm text-slate-400">No service requests yet</p>
-                <Link to="/services/request/new" className="text-xs text-primary-600 mt-2 inline-block hover:underline">Post a request →</Link>
-              </div>
+          <div className="px-5 py-8 text-center">
+            <p className="text-3xl mb-2">📋</p>
+            <p className="text-sm text-slate-400">No service requests yet</p>
+            <Link to="/services/request/new" className="text-xs text-primary-600 mt-2 inline-block hover:underline">Post a request →</Link>
+          </div>
             ) : requests.map(r => (
               <Link key={r.id} to={`/services/request/${r.id}`} className="px-5 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
                 <div>
@@ -132,6 +147,35 @@ export default function CustomerDashboard() {
                   <p className="text-xs text-slate-400 mt-0.5">{r.category}</p>
                 </div>
                 <span className={`badge ${statusBadge(r.status)} capitalize`}>{r.status}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <h2 className="font-display font-semibold text-slate-800">Awaiting Your Confirmation</h2>
+            <Link to="/my-requests" className="text-xs text-primary-600 font-medium hover:underline">Open jobs</Link>
+          </div>
+          <div className="divide-y divide-slate-50">
+            {loading ? (
+              Array(3).fill(0).map((_, i) => (
+                <div key={i} className="px-5 py-3.5 flex gap-3">
+                  <div className="skeleton h-4 w-full rounded" />
+                </div>
+              ))
+            ) : pendingConfirmations.length === 0 ? (
+              <div className="px-5 py-8 text-center">
+                <p className="text-3xl mb-2">✅</p>
+                <p className="text-sm text-slate-400">No jobs waiting for your confirmation</p>
+              </div>
+            ) : pendingConfirmations.map(item => (
+              <Link key={`${item.type}-${item.id}`} to={item.to} className="px-5 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                <div>
+                  <p className="text-sm font-medium text-slate-800">{item.title}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{item.provider || 'Assigned provider'}</p>
+                </div>
+                <span className="badge bg-purple-100 text-purple-700">Confirm</span>
               </Link>
             ))}
           </div>

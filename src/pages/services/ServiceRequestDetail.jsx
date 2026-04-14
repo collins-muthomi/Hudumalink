@@ -1,9 +1,17 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { servicesAPI } from '../../services/api'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { requestsAPI, reviewsAPI, walletAPI } from '../../services/api'
 import { useToast } from '../../context/contexts'
 import Button from '../../components/ui/Button'
-import { ConfirmModal } from '../../components/ui/Modal'
+import Modal from '../../components/ui/Modal'
+
+const statusColor = {
+  open: 'bg-amber-100 text-amber-700 border-amber-200',
+  assigned: 'bg-blue-100 text-blue-700 border-blue-200',
+  in_progress: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+  completion_requested: 'bg-purple-100 text-purple-700 border-purple-200',
+  completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+}
 
 export default function ServiceRequestDetail() {
   const { id } = useParams()
@@ -11,42 +19,82 @@ export default function ServiceRequestDetail() {
   const { toast } = useToast()
   const [request, setRequest] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [showCancel, setShowCancel] = useState(false)
-  const [cancelling, setCancelling] = useState(false)
+  const [updating, setUpdating] = useState(false)
+  const [paying, setPaying] = useState(false)
+  const [showCompleteModal, setShowCompleteModal] = useState(false)
+  const [review, setReview] = useState({ rating: 5, comment: '' })
 
   useEffect(() => {
-    servicesAPI.requestDetail(id)
-      .then(r => setRequest(r.data))
+    requestsAPI.detail(id)
+      .then((response) => setRequest(response.data))
       .catch(() => toast.error('Not found', 'Could not load this request.'))
       .finally(() => setLoading(false))
-  }, [id])
+  }, [id, toast])
 
-  const handleCancel = async () => {
-    setCancelling(true)
+  const updateStatus = async (status) => {
+    setUpdating(true)
     try {
-      await servicesAPI.cancelRequest(id)
-      setRequest(p => ({ ...p, status: 'cancelled' }))
-      toast.success('Request cancelled')
-      setShowCancel(false)
-    } catch { toast.error('Failed', 'Could not cancel request.') }
-    finally { setCancelling(false) }
+      const response = await requestsAPI.updateStatus(id, { status })
+      setRequest(response.data)
+      toast.success('Status updated', `Request marked ${status.replace('_', ' ')}.`)
+    } catch (error) {
+      toast.error('Update failed', error.response?.data?.detail || 'Could not update the request.')
+    } finally {
+      setUpdating(false)
+    }
   }
 
-  const statusColor = {
-    pending: 'bg-amber-100 text-amber-700 border-amber-200',
-    active: 'bg-blue-100 text-blue-700 border-blue-200',
-    completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    cancelled: 'bg-red-100 text-red-700 border-red-200',
+  const confirmCompletionWithReview = async () => {
+    if (!review.comment.trim()) {
+      toast.error('Review required', 'Please leave a short review before confirming completion.')
+      return
+    }
+
+    setUpdating(true)
+    try {
+      const response = await requestsAPI.updateStatus(id, { status: 'completed' })
+      await reviewsAPI.create({
+        provider: request.assignedProvider?._id || request.assignedProvider,
+        target_type: 'provider',
+        target_id: request.assignedProvider?._id || request.assignedProvider,
+        rating: Number(review.rating),
+        comment: review.comment.trim(),
+      })
+      setRequest(response.data)
+      setShowCompleteModal(false)
+      toast.success('Completion confirmed', 'Your review was saved and payment is now unlocked.')
+    } catch (error) {
+      toast.error('Update failed', error.response?.data?.detail || 'Could not update the request.')
+    } finally {
+      setUpdating(false)
+    }
   }
 
-  if (loading) return (
-    <div className="p-6 space-y-4 max-w-2xl mx-auto">
-      {Array(5).fill(0).map((_, i) => <div key={i} className="skeleton h-6 rounded-xl" />)}
-    </div>
-  )
-  if (!request) return (
-    <div className="p-6 text-center"><p className="text-slate-400">Request not found.</p></div>
-  )
+  const payForJob = async () => {
+    setPaying(true)
+    try {
+      await walletAPI.payCustomerRequest(id)
+      const response = await requestsAPI.detail(id)
+      setRequest(response.data)
+      toast.success('Payment complete', 'The admin commission and provider payout were settled automatically.')
+    } catch (error) {
+      toast.error('Payment failed', error.response?.data?.detail || 'Could not complete payment.')
+    } finally {
+      setPaying(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 space-y-4 max-w-2xl mx-auto">
+        {Array(5).fill(0).map((_, index) => <div key={index} className="skeleton h-6 rounded-xl" />)}
+      </div>
+    )
+  }
+
+  if (!request) {
+    return <div className="p-6 text-center text-slate-400">Request not found.</div>
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto animate-fade-in space-y-6">
@@ -59,23 +107,44 @@ export default function ServiceRequestDetail() {
 
       <div className="card p-6 space-y-5">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="font-display font-bold text-xl text-slate-900 flex-1">{request.title}</h1>
-          <span className={`badge border ${statusColor[request.status] || 'bg-slate-100 text-slate-600'} capitalize flex-shrink-0`}>{request.status}</span>
+          <div>
+            <h1 className="font-display font-bold text-xl text-slate-900">{request.title}</h1>
+            <p className="text-xs text-slate-400 mt-1">{request.category_name || request.category}</p>
+          </div>
+          <span className={`badge border capitalize ${statusColor[request.status] || 'bg-slate-100 text-slate-600'}`}>
+            {request.status?.replace('_', ' ')}
+          </span>
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <div><p className="text-slate-400 text-xs font-medium mb-0.5">Category</p><p className="font-medium text-slate-700">{request.category_name || request.category}</p></div>
-          <div><p className="text-slate-400 text-xs font-medium mb-0.5">Location</p><p className="font-medium text-slate-700">{request.location}</p></div>
-          <div><p className="text-slate-400 text-xs font-medium mb-0.5">Urgency</p><p className="font-medium text-slate-700 capitalize">{request.urgency}</p></div>
-          <div><p className="text-slate-400 text-xs font-medium mb-0.5">Posted</p><p className="font-medium text-slate-700">{new Date(request.created_at).toLocaleDateString()}</p></div>
-          {(request.budget_min || request.budget_max) && (
-            <div className="col-span-2">
-              <p className="text-slate-400 text-xs font-medium mb-0.5">Budget</p>
-              <p className="font-semibold text-primary-700">
-                KSh {request.budget_min ? Number(request.budget_min).toLocaleString() : '?'} – {request.budget_max ? Number(request.budget_max).toLocaleString() : '?'}
-              </p>
-            </div>
-          )}
+          <div>
+            <p className="text-slate-400 text-xs font-medium mb-0.5">Location</p>
+            <p className="font-medium text-slate-700">{request.location}</p>
+          </div>
+          <div>
+            <p className="text-slate-400 text-xs font-medium mb-0.5">Budget</p>
+            <p className="font-semibold text-primary-700">
+              {request.budget ? `KSh ${Number(request.budget).toLocaleString()}` : 'Flexible'}
+            </p>
+          </div>
+          <div>
+            <p className="text-slate-400 text-xs font-medium mb-0.5">Posted</p>
+            <p className="font-medium text-slate-700">{new Date(request.createdAt || request.created_at).toLocaleDateString()}</p>
+          </div>
+          <div>
+            <p className="text-slate-400 text-xs font-medium mb-0.5">Assigned Provider</p>
+            {request.assignedProvider || request.assigned_provider_name ? (
+              <Link to={`/providers/${request.assignedProvider?._id || request.assignedProvider || ''}`} className="font-medium text-primary-700 hover:underline">
+                {request.assigned_provider_name || 'View provider'}
+              </Link>
+            ) : (
+              <p className="font-medium text-slate-700">Waiting for a provider</p>
+            )}
+          </div>
+          <div>
+            <p className="text-slate-400 text-xs font-medium mb-0.5">Payment</p>
+            <p className="font-medium text-slate-700 capitalize">{request.payment_status || 'unpaid'}</p>
+          </div>
         </div>
 
         <div>
@@ -83,44 +152,54 @@ export default function ServiceRequestDetail() {
           <p className="text-slate-700 text-sm leading-relaxed">{request.description}</p>
         </div>
 
-        {/* Responses */}
-        {request.responses?.length > 0 && (
-          <div>
-            <p className="text-slate-700 font-semibold text-sm mb-3">Provider Responses ({request.responses.length})</p>
-            <div className="space-y-3">
-              {request.responses.map(r => (
-                <div key={r.id} className="bg-slate-50 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-slate-800">{r.provider_name}</p>
-                    <p className="text-sm font-bold text-primary-600">KSh {Number(r.quote).toLocaleString()}</p>
-                  </div>
-                  <p className="text-xs text-slate-500">{r.message}</p>
-                  {request.status === 'pending' && (
-                    <button className="mt-2 text-xs font-medium text-primary-600 hover:underline">Accept Quote</button>
-                  )}
-                </div>
-              ))}
-            </div>
+        {request.status === 'completion_requested' && (
+          <div className="flex justify-end">
+            <Button onClick={() => setShowCompleteModal(true)} loading={updating}>
+              Confirm Completion
+            </Button>
           </div>
         )}
 
-        {request.status === 'pending' && (
-          <div className="pt-2 flex justify-end">
-            <Button variant="danger" size="sm" onClick={() => setShowCancel(true)}>Cancel Request</Button>
+        {request.status === 'completed' && request.payment_status !== 'paid' && (
+          <div className="flex justify-end">
+            <Button onClick={payForJob} loading={paying}>
+              Pay Provider
+            </Button>
           </div>
         )}
       </div>
 
-      <ConfirmModal
-        open={showCancel}
-        onClose={() => setShowCancel(false)}
-        onConfirm={handleCancel}
-        title="Cancel Request"
-        message="Are you sure you want to cancel this service request? This cannot be undone."
-        confirmLabel="Yes, Cancel"
-        danger
-        loading={cancelling}
-      />
+      <Modal
+        open={showCompleteModal}
+        onClose={() => setShowCompleteModal(false)}
+        title="Complete And Review"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setShowCompleteModal(false)} disabled={updating}>Cancel</Button>
+            <Button onClick={confirmCompletionWithReview} loading={updating}>Confirm Completion</Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500">Confirm the work is done, rate the provider, and payment will unlock after this step.</p>
+          <div>
+            <label className="label-base">Rating</label>
+            <select value={review.rating} onChange={(event) => setReview((prev) => ({ ...prev, rating: event.target.value }))} className="input-base">
+              {[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label-base">Review</label>
+            <textarea
+              rows={4}
+              className="input-base resize-none"
+              value={review.comment}
+              onChange={(event) => setReview((prev) => ({ ...prev, comment: event.target.value }))}
+              placeholder="How was the provider's work?"
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

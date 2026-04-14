@@ -12,5 +12,7 @@ router.get('/transactions/', ctrl.getTransactions)
 router.post('/topup/', ctrl.topup)
 router.post('/withdraw/', ctrl.withdraw)
 router.post('/transfer/', ctrl.transfer)
+router.post('/service-bookings/:id/pay/', ctrl.payServiceBooking)
+router.post('/requests/:id/pay/', ctrl.payCustomerRequest)
 
 module.exports = router
