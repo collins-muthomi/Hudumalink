@@ -4,8 +4,8 @@ import { useAuth } from '../../context/AuthContext'
 const roleDashboards = {
   customer: '/dashboard/customer',
   provider: '/dashboard/provider',
-  delivery_driver: '/dashboard/driver',
-  restaurant_owner: '/dashboard/restaurant',
+  delivery_driver: '/services',
+  restaurant_owner: '/services',
   admin: '/dashboard/admin',
 }
 

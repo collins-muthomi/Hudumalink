@@ -8,7 +8,7 @@ const defaultPlans = [
   {
     id: 'free', name: 'Free', price: 0, billing: 'month',
     description: 'Perfect for getting started in Nyeri',
-    features: ['Post up to 3 service requests/month', 'Browse marketplace', 'Order food', 'Basic wallet'],
+    features: ['Post up to 3 service requests/month', 'Browse categorized services', 'Basic wallet', 'Notifications'],
     cta: 'Current Plan', highlight: false,
   },
   {
@@ -20,7 +20,7 @@ const defaultPlans = [
   {
     id: 'business', name: 'Business', price: 1499, billing: 'month',
     description: 'For established businesses in Nyeri',
-    features: ['Everything in Pro', 'Multiple staff accounts', 'Custom business profile', 'Bulk ordering tools', 'API access', 'White-glove onboarding'],
+    features: ['Everything in Pro', 'Multiple staff accounts', 'Custom business profile', 'Escrow and payout oversight', 'API access', 'White-glove onboarding'],
     cta: 'Get Business', highlight: false,
   },
 ]
@@ -55,11 +55,13 @@ export default function PricingPlans() {
   }
 
   const dashboardPath = user
-    ? user.role === 'delivery_driver'
-      ? '/dashboard/driver'
-      : user.role === 'restaurant_owner'
-        ? '/dashboard/restaurant'
-        : `/dashboard/${user.role}`
+    ? user.role === 'admin'
+      ? '/dashboard/admin'
+      : user.role === 'provider'
+        ? '/dashboard/provider'
+        : user.role === 'customer'
+          ? '/dashboard/customer'
+          : '/services'
     : '/login'
 
   return (

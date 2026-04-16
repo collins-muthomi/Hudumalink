@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider, CartProvider, NotificationsProvider } from './context/contexts'
@@ -12,8 +12,6 @@ import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import CustomerDashboard from './pages/dashboards/CustomerDashboard'
 import ProviderDashboard from './pages/dashboards/ProviderDashboard'
-import DeliveryDriverDashboard from './pages/dashboards/DeliveryDriverDashboard'
-import RestaurantOwnerDashboard from './pages/dashboards/RestaurantOwnerDashboard'
 import AdminDashboard from './pages/dashboards/AdminDashboard'
 import AdminUsersPage from './pages/admin/AdminUsersPage'
 import AdminVerificationsPage from './pages/admin/AdminVerificationsPage'
@@ -23,22 +21,11 @@ import PostServiceRequest from './pages/services/PostServiceRequest'
 import ServiceRequestDetail from './pages/services/ServiceRequestDetail'
 import ServiceBookingDetail from './pages/services/ServiceBookingDetail'
 import MyRequests from './pages/services/MyRequests'
-import BrowseMarketplace from './pages/marketplace/BrowseMarketplace'
-import ProductDetail from './pages/marketplace/ProductDetail'
-import AddProductForSale from './pages/marketplace/AddProductForSale'
-import MyOrders from './pages/marketplace/MyOrders'
-import RestaurantList from './pages/food/RestaurantList'
-import RestaurantDetail from './pages/food/RestaurantDetail'
-import FoodPlace from './pages/food/FoodPlace'
-import Cart from './pages/food/Cart'
-import Checkout from './pages/food/Checkout'
 import ProviderVerification from './pages/provider/ProviderVerification'
 import BookingCalendar from './pages/provider/BookingCalendar'
 import OpenRequests from './pages/provider/OpenRequests'
 import ProviderJobs from './pages/provider/ProviderJobs'
 import ManageServices from './pages/provider/ManageServices'
-import RestaurantManagePage from './pages/restaurant/RestaurantManagePage'
-import DeliveryDriverRegistration from './pages/delivery/DeliveryDriverRegistration'
 import NotificationsPage from './pages/NotificationsPage'
 import PricingPlans from './pages/PricingPlans'
 import ProviderProfile from './pages/ProviderProfile'
@@ -75,21 +62,6 @@ export default function App() {
                         <ProviderDashboard />
                       </ProtectedRoute>
                     } />
-                    <Route path="/dashboard/driver" element={
-                      <ProtectedRoute allowedRoles={['delivery_driver']}>
-                        <DeliveryDriverDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/dashboard/restaurant" element={
-                      <ProtectedRoute allowedRoles={['restaurant_owner']}>
-                        <RestaurantOwnerDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/dashboard/restaurant/manage" element={
-                      <ProtectedRoute allowedRoles={['restaurant_owner']}>
-                        <RestaurantManagePage />
-                      </ProtectedRoute>
-                    } />
                     <Route path="/dashboard/admin" element={
                       <ProtectedRoute allowedRoles={['admin']}>
                         <AdminDashboard />
@@ -116,16 +88,9 @@ export default function App() {
                     <Route path="/services/request/:id" element={<ServiceRequestDetail />} />
                     <Route path="/my-requests" element={<MyRequests />} />
 
-                    <Route path="/marketplace" element={<BrowseMarketplace />} />
-                    <Route path="/marketplace/:id" element={<ProductDetail />} />
-                    <Route path="/marketplace/sell" element={<AddProductForSale />} />
-                    <Route path="/my-orders" element={<MyOrders />} />
-
-                    <Route path="/food" element={<RestaurantList />} />
-                    <Route path="/food/place/:id" element={<FoodPlace />} />
-                    <Route path="/food/restaurant/:id" element={<RestaurantDetail />} />
-                    <Route path="/food/cart" element={<Cart />} />
-                    <Route path="/food/checkout" element={<Checkout />} />
+                    <Route path="/marketplace" element={<Navigate to="/services" replace />} />
+                    <Route path="/marketplace/:id" element={<Navigate to="/services" replace />} />
+                    <Route path="/marketplace/sell" element={<Navigate to="/services" replace />} />
 
                     <Route path="/dashboard/provider/verification" element={
                       <ProtectedRoute allowedRoles={['provider']}>
@@ -154,8 +119,6 @@ export default function App() {
                     } />
                     <Route path="/providers/:id" element={<ProviderProfile />} />
                     <Route path="/services/bookings/:id" element={<ServiceBookingDetail />} />
-
-                    <Route path="/delivery/register" element={<DeliveryDriverRegistration />} />
 
                     <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/wallet" element={<WalletPage />} />

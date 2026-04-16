@@ -19,9 +19,9 @@ export default function ProductDetail() {
   const handleOrder = async () => {
     setOrdering(true)
     try {
-      const res = await marketplaceAPI.createOrder({ product: id, quantity: 1 })
+      await marketplaceAPI.createOrder({ product: id, quantity: 1 })
       toast.success('Order placed!', 'The seller will contact you.')
-      navigate(`/my-orders`)
+      navigate('/marketplace')
     } catch (err) {
       toast.error('Failed', err.response?.data?.detail || 'Could not place order.')
     } finally { setOrdering(false) }

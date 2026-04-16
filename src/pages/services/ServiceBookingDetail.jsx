@@ -5,6 +5,17 @@ import { useToast } from '../../context/contexts'
 import Button from '../../components/ui/Button'
 import Modal from '../../components/ui/Modal'
 
+const paymentStatusMeta = {
+  unpaid: { label: 'Pending payment', tone: 'text-amber-700' },
+  pending_payment: { label: 'Pending payment', tone: 'text-amber-700' },
+  payment_received: { label: 'Payment secured', tone: 'text-blue-700' },
+  service_in_progress: { label: 'Service in progress', tone: 'text-indigo-700' },
+  service_completed: { label: 'Service completed', tone: 'text-emerald-700' },
+  payout_pending: { label: 'Payout pending', tone: 'text-violet-700' },
+  payout_released: { label: 'Payout released', tone: 'text-emerald-700' },
+  paid: { label: 'Payout released', tone: 'text-emerald-700' },
+}
+
 export default function ServiceBookingDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -86,7 +97,7 @@ export default function ServiceBookingDetail() {
     setPaying(true)
     try {
       await walletAPI.payServiceBooking(id)
-      toast.success('Payment complete', '15% went to the admin wallet and the rest to the provider.')
+      toast.success('Payment secured', 'Funds are now held in escrow until the service is confirmed complete.')
       load()
     } catch (error) {
       toast.error('Payment failed', error.response?.data?.detail || 'Please try again.')
@@ -97,6 +108,8 @@ export default function ServiceBookingDetail() {
 
   if (loading) return <div className="p-6"><div className="skeleton h-40 rounded-2xl" /></div>
   if (!booking) return <div className="p-6 text-center text-slate-400">{error || 'Booking not found.'}</div>
+
+  const paymentMeta = paymentStatusMeta[booking.payment_status] || { label: booking.payment_status || 'Pending payment', tone: 'text-slate-700' }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto animate-fade-in space-y-6">
@@ -127,7 +140,7 @@ export default function ServiceBookingDetail() {
           </div>
           <div>
             <p className="text-slate-400 text-xs font-medium mb-0.5">Payment</p>
-            <p className="font-medium text-slate-700 capitalize">{booking.payment_status || 'unpaid'}</p>
+            <p className={`font-medium ${paymentMeta.tone}`}>{paymentMeta.label}</p>
           </div>
         </div>
 
@@ -136,18 +149,32 @@ export default function ServiceBookingDetail() {
           <p className="text-sm text-slate-500">{booking.description || 'No extra notes provided.'}</p>
         </div>
 
+        {booking.status === 'accepted' && ['pending_payment', 'unpaid'].includes(booking.payment_status) && (
+          <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
+            <p className="text-sm font-medium text-blue-900">Secure this booking before the provider starts.</p>
+            <p className="mt-1 text-xs text-blue-700">Your payment stays in escrow and is only released after completion is confirmed.</p>
+          </div>
+        )}
+
+        {booking.payment_status === 'payment_received' && (
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+            <p className="text-sm font-medium text-emerald-900">Payment secured.</p>
+            <p className="mt-1 text-xs text-emerald-700">The provider can proceed while your funds remain protected in escrow.</p>
+          </div>
+        )}
+
         <div className="flex justify-end gap-3">
+          {booking.status === 'accepted' && ['pending_payment', 'unpaid'].includes(booking.payment_status) && (
+            <Button onClick={payForJob} loading={paying}>
+              Secure Payment
+            </Button>
+          )}
           {booking.status === 'completion_requested' && (
             <Button onClick={() => setShowCompleteModal(true)} loading={confirming}>
               Confirm Completion
             </Button>
           )}
-          {booking.status === 'completed' && booking.payment_status !== 'paid' && (
-            <Button onClick={payForJob} loading={paying}>
-              Pay Provider
-            </Button>
-          )}
-          {booking.status === 'completed' && booking.payment_status === 'paid' && !booking.reviewed && (
+          {(booking.payment_status === 'payout_released' || booking.payment_status === 'paid') && !booking.reviewed && (
             <Button onClick={() => setShowReview(true)}>Rate Provider</Button>
           )}
         </div>
@@ -165,7 +192,7 @@ export default function ServiceBookingDetail() {
         }
       >
         <div className="space-y-4">
-          <p className="text-sm text-slate-500">Confirm the work is done, then rate and review the provider. Payment unlocks after this step.</p>
+          <p className="text-sm text-slate-500">Confirm the work is done, then rate and review the provider. The payout will remain pending until release is approved.</p>
           <div>
             <label className="label-base">Rating</label>
             <select value={review.rating} onChange={(event) => setReview((prev) => ({ ...prev, rating: event.target.value }))} className="input-base">

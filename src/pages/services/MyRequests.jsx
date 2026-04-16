@@ -40,7 +40,7 @@ export default function MyRequests() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-display font-bold text-2xl text-slate-900">My Service Activity</h1>
-          <p className="text-slate-500 text-sm mt-1">Track both open marketplace requests and direct service bookings</p>
+          <p className="text-slate-500 text-sm mt-1">Track customer requests, direct bookings, and escrow payment progress in one place.</p>
         </div>
         <Link to="/services/request/new" className="btn-primary text-sm py-2 px-4">+ New Request</Link>
       </div>

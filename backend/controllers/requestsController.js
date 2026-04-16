@@ -2,11 +2,32 @@ const CustomerRequest = require('../models/CustomerRequest')
 const { ProviderProfile } = require('../models/index')
 const { SERVICE_CATEGORIES } = require('./servicesController')
 const { paginatedResponse, notify, notifyAdmins } = require('../utils/helpers')
+const { releaseEscrowPayment, ESCROW_PENDING_STATES } = require('./walletController')
 
 const REQUEST_STATUS_FLOW = ['open', 'assigned', 'in_progress', 'completion_requested', 'completed']
+const PAYMENT_STATUS_FLOW = ['pending_payment', 'payment_received', 'service_in_progress', 'service_completed', 'payout_pending', 'payout_released']
 
 const getCategoryMeta = (category) =>
   SERVICE_CATEGORIES.find((item) => item.slug === category || item.id === category)
+
+const applyCategoryFilter = (filter, category) => {
+  const categoryMeta = getCategoryMeta(category)
+  if (categoryMeta) {
+    filter.category = categoryMeta.slug
+    return
+  }
+
+  const matching = SERVICE_CATEGORIES
+    .filter((item) => item.group_slug === category)
+    .map((item) => item.slug)
+
+  if (matching.length) {
+    filter.category = { $in: matching }
+    return
+  }
+
+  filter.category = category
+}
 
 const mapRequest = async (request) => {
   const obj = request.toJSON()
@@ -14,7 +35,7 @@ const mapRequest = async (request) => {
   obj.assigned_provider_name = request.assignedProvider
     ? `${request.assignedProvider.first_name} ${request.assignedProvider.last_name}`
     : null
-  obj.can_pay = request.status === 'completed' && request.payment_status !== 'paid'
+  obj.can_pay = request.status === 'assigned' && ESCROW_PENDING_STATES.includes(request.payment_status)
 
   if (request.assignedProvider) {
     const profile = await ProviderProfile.findOne({ user: request.assignedProvider._id || request.assignedProvider })
@@ -36,8 +57,10 @@ exports.createRequest = async (req, res) => {
     customer: req.user._id,
     title,
     description,
-    category,
+    category: categoryMeta?.slug || category,
     category_name: categoryMeta?.name || category,
+    parent_category: categoryMeta?.group_slug || '',
+    parent_category_name: categoryMeta?.group_name || '',
     location: location || 'Nyeri Town',
     budget: budget || null,
   })
@@ -48,7 +71,7 @@ exports.createRequest = async (req, res) => {
 exports.openRequests = async (req, res) => {
   const { category, search, page = 1, limit = 20 } = req.query
   const filter = { status: 'open' }
-  if (category) filter.category = category
+  if (category) applyCategoryFilter(filter, category)
   if (search) {
     filter.$or = [
       { title: { $regex: search, $options: 'i' } },
@@ -145,11 +168,6 @@ exports.acceptRequest = async (req, res) => {
 }
 
 exports.updateRequestStatus = async (req, res) => {
-  const { status } = req.body
-  if (!status || !REQUEST_STATUS_FLOW.includes(status)) {
-    return res.status(400).json({ detail: 'Invalid status.' })
-  }
-
   const request = await CustomerRequest.findById(req.params.id)
   if (!request) return res.status(404).json({ detail: 'Request not found.' })
 
@@ -158,6 +176,62 @@ exports.updateRequestStatus = async (req, res) => {
 
   if (!isCustomer && !isProvider && req.user.role !== 'admin') {
     return res.status(403).json({ detail: 'Not authorized.' })
+  }
+
+  if (req.body.payment_status) {
+    const { payment_status } = req.body
+    if (!PAYMENT_STATUS_FLOW.includes(payment_status)) {
+      return res.status(400).json({ detail: 'Invalid payment status.' })
+    }
+
+    if (payment_status === 'payout_pending') {
+      if (!isProvider && req.user.role !== 'admin') {
+        return res.status(403).json({ detail: 'Only the provider can request payout.' })
+      }
+      if (request.status !== 'completed') {
+        return res.status(400).json({ detail: 'The request must be completed before payout can be requested.' })
+      }
+      if (!['service_completed', 'payment_received', 'service_in_progress'].includes(request.payment_status)) {
+        return res.status(400).json({ detail: 'Escrow payment must be secured before payout can be requested.' })
+      }
+
+      request.payment_status = 'payout_pending'
+      request.payout_requested_at = new Date()
+      await request.save()
+
+      await notifyAdmins({
+        type: 'payment',
+        title: 'Payout requested',
+        message: `${request.title} is ready for payout release.`,
+        data: { requestId: request._id.toString(), payment_status: 'payout_pending' },
+      })
+    } else if (payment_status === 'payout_released') {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ detail: 'Only admin can release payout.' })
+      }
+      await releaseEscrowPayment({
+        job: request,
+        providerId: request.assignedProvider,
+        label: request.title || 'Customer request',
+      })
+    } else {
+      return res.status(400).json({ detail: 'This payment status is managed automatically by the system.' })
+    }
+
+    const populated = await CustomerRequest.findById(request._id)
+      .populate('customer', 'first_name last_name')
+      .populate('assignedProvider', 'first_name last_name')
+
+    return res.json(await mapRequest(populated))
+  }
+
+  const { status } = req.body
+  if (!status || !REQUEST_STATUS_FLOW.includes(status)) {
+    return res.status(400).json({ detail: 'Invalid status.' })
+  }
+
+  if (status === 'in_progress' && ESCROW_PENDING_STATES.includes(request.payment_status)) {
+    return res.status(400).json({ detail: 'Customer payment must be secured before work can begin.' })
   }
 
   if (status === 'completed') {
@@ -172,6 +246,12 @@ exports.updateRequestStatus = async (req, res) => {
   }
 
   request.status = status
+  if (status === 'in_progress' && request.payment_status === 'payment_received') {
+    request.payment_status = 'service_in_progress'
+  }
+  if (status === 'completed' && ['payment_received', 'service_in_progress'].includes(request.payment_status)) {
+    request.payment_status = 'service_completed'
+  }
   await request.save()
 
   if (status === 'completion_requested') {

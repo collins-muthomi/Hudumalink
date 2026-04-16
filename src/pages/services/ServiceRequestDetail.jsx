@@ -13,6 +13,17 @@ const statusColor = {
   completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
 }
 
+const paymentStatusMeta = {
+  unpaid: { label: 'Pending payment', tone: 'text-amber-700' },
+  pending_payment: { label: 'Pending payment', tone: 'text-amber-700' },
+  payment_received: { label: 'Payment secured', tone: 'text-blue-700' },
+  service_in_progress: { label: 'Service in progress', tone: 'text-indigo-700' },
+  service_completed: { label: 'Service completed', tone: 'text-emerald-700' },
+  payout_pending: { label: 'Payout pending', tone: 'text-violet-700' },
+  payout_released: { label: 'Payout released', tone: 'text-emerald-700' },
+  paid: { label: 'Payout released', tone: 'text-emerald-700' },
+}
+
 export default function ServiceRequestDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -76,7 +87,7 @@ export default function ServiceRequestDetail() {
       await walletAPI.payCustomerRequest(id)
       const response = await requestsAPI.detail(id)
       setRequest(response.data)
-      toast.success('Payment complete', 'The admin commission and provider payout were settled automatically.')
+      toast.success('Payment secured', 'Funds are now held safely in escrow until the service is completed.')
     } catch (error) {
       toast.error('Payment failed', error.response?.data?.detail || 'Could not complete payment.')
     } finally {
@@ -95,6 +106,8 @@ export default function ServiceRequestDetail() {
   if (!request) {
     return <div className="p-6 text-center text-slate-400">Request not found.</div>
   }
+
+  const paymentMeta = paymentStatusMeta[request.payment_status] || { label: request.payment_status || 'Pending payment', tone: 'text-slate-700' }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto animate-fade-in space-y-6">
@@ -143,7 +156,7 @@ export default function ServiceRequestDetail() {
           </div>
           <div>
             <p className="text-slate-400 text-xs font-medium mb-0.5">Payment</p>
-            <p className="font-medium text-slate-700 capitalize">{request.payment_status || 'unpaid'}</p>
+            <p className={`font-medium ${paymentMeta.tone}`}>{paymentMeta.label}</p>
           </div>
         </div>
 
@@ -151,6 +164,20 @@ export default function ServiceRequestDetail() {
           <p className="text-slate-400 text-xs font-medium mb-1.5">Description</p>
           <p className="text-slate-700 text-sm leading-relaxed">{request.description}</p>
         </div>
+
+        {request.status === 'assigned' && ['pending_payment', 'unpaid'].includes(request.payment_status) && (
+          <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
+            <p className="text-sm font-medium text-blue-900">Secure payment before work starts.</p>
+            <p className="mt-1 text-xs text-blue-700">Your payment will be held in escrow and only released after you confirm completion.</p>
+          </div>
+        )}
+
+        {request.payment_status === 'payment_received' && (
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+            <p className="text-sm font-medium text-emerald-900">Payment secured.</p>
+            <p className="mt-1 text-xs text-emerald-700">The provider can now proceed, but funds stay protected until the job is complete.</p>
+          </div>
+        )}
 
         {request.status === 'completion_requested' && (
           <div className="flex justify-end">
@@ -160,10 +187,10 @@ export default function ServiceRequestDetail() {
           </div>
         )}
 
-        {request.status === 'completed' && request.payment_status !== 'paid' && (
+        {request.status === 'assigned' && ['pending_payment', 'unpaid'].includes(request.payment_status) && (
           <div className="flex justify-end">
             <Button onClick={payForJob} loading={paying}>
-              Pay Provider
+              Secure Payment
             </Button>
           </div>
         )}

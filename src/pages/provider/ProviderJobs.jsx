@@ -14,6 +14,17 @@ const bookingNextStatus = {
   in_progress: 'completion_requested',
 }
 
+const paymentStatusLabel = {
+  pending_payment: 'Awaiting customer payment',
+  payment_received: 'Payment secured',
+  service_in_progress: 'Service in progress',
+  service_completed: 'Ready for payout request',
+  payout_pending: 'Payout pending admin release',
+  payout_released: 'Payout released',
+  unpaid: 'Awaiting customer payment',
+  paid: 'Payout released',
+}
+
 export default function ProviderJobs() {
   const { toast } = useToast()
   const [customerRequests, setCustomerRequests] = useState([])
@@ -67,6 +78,34 @@ export default function ProviderJobs() {
     }
   }
 
+  const requestPayout = async (job) => {
+    const key = `payout-${job._id || job.id}`
+    setUpdatingKey(key)
+    try {
+      await serviceBookingsAPI.updateStatus(job._id || job.id, { payment_status: 'payout_pending' })
+      toast.success('Payout requested', 'Admin can now release the escrowed payment.')
+      load()
+    } catch (error) {
+      toast.error('Payout request failed', error.response?.data?.detail || 'Please try again.')
+    } finally {
+      setUpdatingKey('')
+    }
+  }
+
+  const requestCustomerPayout = async (request) => {
+    const key = `request-payout-${request._id || request.id}`
+    setUpdatingKey(key)
+    try {
+      await requestsAPI.updateStatus(request._id || request.id, { payment_status: 'payout_pending' })
+      toast.success('Payout requested', 'Admin can now release the escrowed payment.')
+      load()
+    } catch (error) {
+      toast.error('Payout request failed', error.response?.data?.detail || 'Please try again.')
+    } finally {
+      setUpdatingKey('')
+    }
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-fade-in">
       <div>
@@ -94,9 +133,15 @@ export default function ProviderJobs() {
                   <span className="badge capitalize bg-blue-100 text-blue-700">{request.status?.replace('_', ' ')}</span>
                 </div>
                 <p className="text-sm text-slate-500">{request.description}</p>
+                <p className="text-xs font-medium text-slate-400">{paymentStatusLabel[request.payment_status] || 'Awaiting payment update'}</p>
                 {requestNextStatus[request.status] && (
                   <Button size="sm" onClick={() => updateCustomerRequest(request, requestNextStatus[request.status])} loading={updatingKey === `request-${request._id || request.id}`}>
                     Mark {requestNextStatus[request.status].replace('_', ' ')}
+                  </Button>
+                )}
+                {request.status === 'completed' && request.payment_status === 'service_completed' && (
+                  <Button size="sm" variant="secondary" onClick={() => requestCustomerPayout(request)} loading={updatingKey === `request-payout-${request._id || request.id}`}>
+                    Request Payout
                   </Button>
                 )}
               </div>
@@ -123,9 +168,15 @@ export default function ProviderJobs() {
                   <span className="badge capitalize bg-slate-100 text-slate-700">{job.status?.replace('_', ' ')}</span>
                 </div>
                 <p className="text-sm text-slate-500">{job.description || 'No extra notes provided.'}</p>
+                <p className="text-xs font-medium text-slate-400">{paymentStatusLabel[job.payment_status] || 'Awaiting payment update'}</p>
                 {bookingNextStatus[job.status] && (
                   <Button size="sm" onClick={() => updateServiceJob(job, bookingNextStatus[job.status])} loading={updatingKey === `job-${job._id || job.id}`}>
                     Mark {bookingNextStatus[job.status].replace('_', ' ')}
+                  </Button>
+                )}
+                {job.status === 'completed' && job.payment_status === 'service_completed' && (
+                  <Button size="sm" variant="secondary" onClick={() => requestPayout(job)} loading={updatingKey === `payout-${job._id || job.id}`}>
+                    Request Payout
                   </Button>
                 )}
               </div>

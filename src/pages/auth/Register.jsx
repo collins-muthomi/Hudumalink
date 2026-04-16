@@ -10,8 +10,6 @@ import PhoneInputKE from '../../components/ui/PhoneInputKE'
 const roles = [
   { value: 'customer', label: 'Customer', desc: 'Book services & shop', emoji: '🛒' },
   { value: 'provider', label: 'Service Provider', desc: 'Offer your skills', emoji: '🛠️' },
-  { value: 'delivery_driver', label: 'Delivery Driver', desc: 'Deliver orders', emoji: '🚴' },
-  { value: 'restaurant_owner', label: 'Restaurant', desc: 'Sell food online', emoji: '🍽️' },
 ]
 
 export default function Register() {
@@ -59,8 +57,6 @@ export default function Register() {
       const dash = {
         customer: '/dashboard/customer',
         provider: '/dashboard/provider',
-        delivery_driver: '/dashboard/driver',
-        restaurant_owner: '/dashboard/restaurant',
       }
       navigate(dash[user.role] || '/dashboard/customer')
     } catch (err) {
@@ -97,7 +93,7 @@ export default function Register() {
         <div className="card p-8 shadow-card">
           <div className="mb-6">
             <p className="label-base">I want to…</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {roles.map(r => (
                 <button
                   key={r.value}

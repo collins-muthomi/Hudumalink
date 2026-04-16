@@ -6,11 +6,13 @@ export default function NotFound() {
   const { user } = useAuth()
 
   const dash = user
-    ? user.role === 'delivery_driver'
-      ? '/dashboard/driver'
-      : user.role === 'restaurant_owner'
-        ? '/dashboard/restaurant'
-        : `/dashboard/${user.role}`
+    ? user.role === 'admin'
+      ? '/dashboard/admin'
+      : user.role === 'provider'
+        ? '/dashboard/provider'
+        : user.role === 'customer'
+          ? '/dashboard/customer'
+          : '/services'
     : '/'
 
   return (

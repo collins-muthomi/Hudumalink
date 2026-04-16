@@ -2,27 +2,54 @@ const User = require('../models/User')
 const { Service, ServiceBooking } = require('../models/Service')
 const { ProviderProfile } = require('../models/index')
 const { paginatedResponse, notify, notifyAdmins } = require('../utils/helpers')
+const { releaseEscrowPayment, ESCROW_PENDING_STATES } = require('./walletController')
 
 const SERVICE_CATEGORIES = [
-  { id: 'plumbing', slug: 'plumbing', name: 'Plumbing' },
-  { id: 'electrical', slug: 'electrical', name: 'Electrical' },
-  { id: 'cleaning', slug: 'cleaning', name: 'Cleaning' },
-  { id: 'carpentry', slug: 'carpentry', name: 'Carpentry' },
-  { id: 'painting', slug: 'painting', name: 'Painting' },
-  { id: 'tutoring', slug: 'tutoring', name: 'Tutoring' },
-  { id: 'beauty', slug: 'beauty', name: 'Beauty & Hair' },
-  { id: 'mechanic', slug: 'mechanic', name: 'Mechanic' },
-  { id: 'moving', slug: 'moving', name: 'Moving' },
-  { id: 'gardening', slug: 'gardening', name: 'Gardening' },
-  { id: 'tech', slug: 'tech', name: 'Tech Help' },
-  { id: 'petcare', slug: 'petcare', name: 'Pet Care' },
-  { id: 'other', slug: 'other', name: 'Other' },
+  { id: 'plumbing', slug: 'plumbing', name: 'Plumbing', group_slug: 'home-services', group_name: 'Home Services' },
+  { id: 'electrical', slug: 'electrical', name: 'Electrical', group_slug: 'home-services', group_name: 'Home Services' },
+  { id: 'cleaning', slug: 'cleaning', name: 'Cleaning', group_slug: 'home-services', group_name: 'Home Services' },
+  { id: 'carpentry', slug: 'carpentry', name: 'Carpentry', group_slug: 'home-services', group_name: 'Home Services' },
+  { id: 'painting', slug: 'painting', name: 'Painting', group_slug: 'home-services', group_name: 'Home Services' },
+  { id: 'barber', slug: 'barber', name: 'Barber', group_slug: 'beauty', group_name: 'Beauty' },
+  { id: 'salon', slug: 'salon', name: 'Salon', group_slug: 'beauty', group_name: 'Beauty' },
+  { id: 'nails', slug: 'nails', name: 'Nails', group_slug: 'beauty', group_name: 'Beauty' },
+  { id: 'makeup', slug: 'makeup', name: 'Makeup', group_slug: 'beauty', group_name: 'Beauty' },
+  { id: 'phone-repair', slug: 'phone-repair', name: 'Phone Repair', group_slug: 'tech', group_name: 'Tech' },
+  { id: 'laptop-repair', slug: 'laptop-repair', name: 'Laptop Repair', group_slug: 'tech', group_name: 'Tech' },
+  { id: 'wifi-setup', slug: 'wifi-setup', name: 'WiFi Setup', group_slug: 'tech', group_name: 'Tech' },
+  { id: 'software-help', slug: 'software-help', name: 'Software Help', group_slug: 'tech', group_name: 'Tech' },
+  { id: 'house-moving', slug: 'house-moving', name: 'House Moving', group_slug: 'moving', group_name: 'Moving' },
+  { id: 'furniture-moving', slug: 'furniture-moving', name: 'Furniture Moving', group_slug: 'moving', group_name: 'Moving' },
+  { id: 'tutoring', slug: 'tutoring', name: 'Tutoring', group_slug: 'personal', group_name: 'Personal' },
+  { id: 'gardening', slug: 'gardening', name: 'Gardening', group_slug: 'personal', group_name: 'Personal' },
+  { id: 'pet-care', slug: 'pet-care', name: 'Pet Care', group_slug: 'personal', group_name: 'Personal' },
+  { id: 'other', slug: 'other', name: 'Other', group_slug: 'personal', group_name: 'Personal' },
 ]
 
 const SERVICE_STATUS_FLOW = ['pending', 'accepted', 'in_progress', 'completion_requested', 'completed', 'cancelled']
+const PAYMENT_STATUS_FLOW = ['pending_payment', 'payment_received', 'service_in_progress', 'service_completed', 'payout_pending', 'payout_released']
 
 const getCategoryMeta = (category) =>
   SERVICE_CATEGORIES.find((item) => item.slug === category || item.id === category)
+
+const applyCategoryFilter = (filter, category) => {
+  const categoryMeta = getCategoryMeta(category)
+  if (categoryMeta) {
+    filter.category = categoryMeta.slug
+    return
+  }
+
+  const matching = SERVICE_CATEGORIES
+    .filter((item) => item.group_slug === category)
+    .map((item) => item.slug)
+
+  if (matching.length) {
+    filter.category = { $in: matching }
+    return
+  }
+
+  filter.category = category
+}
 
 const mapService = async (service) => {
   const obj = service.toJSON()
@@ -37,6 +64,8 @@ const mapService = async (service) => {
   obj.profileImage = profile?.profileImage || profile?.profile_photo || null
   obj.averageRating = profile?.average_rating || null
   obj.totalReviews = profile?.reviews_count || 0
+  obj.parent_category = service.parent_category || null
+  obj.parent_category_name = service.parent_category_name || null
 
   return obj
 }
@@ -46,7 +75,7 @@ const mapBooking = (booking) => {
   obj.customer_name = booking.customer ? `${booking.customer.first_name} ${booking.customer.last_name}` : null
   obj.provider_name = booking.provider ? `${booking.provider.first_name} ${booking.provider.last_name}` : null
   obj.service_title = booking.service?.title || booking.title
-  obj.can_pay = booking.status === 'completed' && booking.payment_status !== 'paid'
+  obj.can_pay = booking.status === 'accepted' && ESCROW_PENDING_STATES.includes(booking.payment_status)
   return obj
 }
 
@@ -65,7 +94,7 @@ exports.listServices = async (req, res) => {
   }
 
   const filter = { is_active: true, provider: { $in: providerIds } }
-  if (category) filter.category = category
+  if (category) applyCategoryFilter(filter, category)
   if (search) {
     filter.$or = [
       { title: { $regex: search, $options: 'i' } },
@@ -117,8 +146,10 @@ exports.createService = async (req, res) => {
     provider: req.user._id,
     title,
     description,
-    category,
+    category: categoryMeta?.slug || category,
     category_name: categoryMeta?.name || category,
+    parent_category: categoryMeta?.group_slug || '',
+    parent_category_name: categoryMeta?.group_name || '',
     price_from: price_from || null,
     image: image || null,
     location: location || 'Nyeri Town',
@@ -144,7 +175,10 @@ exports.updateService = async (req, res) => {
 
   if (req.body.category) {
     const categoryMeta = getCategoryMeta(req.body.category)
+    service.category = categoryMeta?.slug || req.body.category
     service.category_name = categoryMeta?.name || req.body.category
+    service.parent_category = categoryMeta?.group_slug || ''
+    service.parent_category_name = categoryMeta?.group_name || ''
   }
 
   await service.save()
@@ -274,11 +308,6 @@ exports.acceptBooking = async (req, res) => {
 }
 
 exports.updateBookingStatus = async (req, res) => {
-  const { status } = req.body
-  if (!status || !SERVICE_STATUS_FLOW.includes(status)) {
-    return res.status(400).json({ detail: 'Invalid status.' })
-  }
-
   const booking = await ServiceBooking.findById(req.params.id)
   if (!booking) return res.status(404).json({ detail: 'Service request not found.' })
 
@@ -289,8 +318,65 @@ exports.updateBookingStatus = async (req, res) => {
     return res.status(403).json({ detail: 'Not authorized.' })
   }
 
+  if (req.body.payment_status) {
+    const { payment_status } = req.body
+    if (!PAYMENT_STATUS_FLOW.includes(payment_status)) {
+      return res.status(400).json({ detail: 'Invalid payment status.' })
+    }
+
+    if (payment_status === 'payout_pending') {
+      if (!isProvider && req.user.role !== 'admin') {
+        return res.status(403).json({ detail: 'Only the provider can request payout.' })
+      }
+      if (booking.status !== 'completed') {
+        return res.status(400).json({ detail: 'The service must be completed before payout can be requested.' })
+      }
+      if (!['service_completed', 'payment_received', 'service_in_progress'].includes(booking.payment_status)) {
+        return res.status(400).json({ detail: 'Escrow payment must be secured before payout can be requested.' })
+      }
+
+      booking.payment_status = 'payout_pending'
+      booking.payout_requested_at = new Date()
+      await booking.save()
+
+      await notifyAdmins({
+        type: 'payment',
+        title: 'Payout requested',
+        message: `${booking.title} is ready for payout release.`,
+        data: { bookingId: booking._id.toString(), payment_status: 'payout_pending' },
+      })
+    } else if (payment_status === 'payout_released') {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ detail: 'Only admin can release payout.' })
+      }
+      await releaseEscrowPayment({
+        job: booking,
+        providerId: booking.provider,
+        label: booking.title || 'Service booking',
+      })
+    } else {
+      return res.status(400).json({ detail: 'This payment status is managed automatically by the system.' })
+    }
+
+    const populated = await ServiceBooking.findById(booking._id)
+      .populate('customer', 'first_name last_name')
+      .populate('provider', 'first_name last_name')
+      .populate('service', 'title')
+
+    return res.json(mapBooking(populated))
+  }
+
+  const { status } = req.body
+  if (!status || !SERVICE_STATUS_FLOW.includes(status)) {
+    return res.status(400).json({ detail: 'Invalid status.' })
+  }
+
   if (status === 'cancelled' && !isCustomer && req.user.role !== 'admin') {
     return res.status(403).json({ detail: 'Only the customer can cancel this request.' })
+  }
+
+  if (status === 'in_progress' && ESCROW_PENDING_STATES.includes(booking.payment_status)) {
+    return res.status(400).json({ detail: 'Customer payment must be secured before work can begin.' })
   }
 
   if (status === 'completed') {
@@ -305,6 +391,12 @@ exports.updateBookingStatus = async (req, res) => {
   }
 
   booking.status = status
+  if (status === 'in_progress' && booking.payment_status === 'payment_received') {
+    booking.payment_status = 'service_in_progress'
+  }
+  if (status === 'completed' && ['payment_received', 'service_in_progress'].includes(booking.payment_status)) {
+    booking.payment_status = 'service_completed'
+  }
   await booking.save()
 
   if (status === 'completion_requested') {

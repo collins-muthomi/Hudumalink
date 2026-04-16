@@ -2,7 +2,8 @@ const User = require('../models/User')
 const { ProviderProfile, Wallet, ActivityLog, Notification } = require('../models/index')
 const { FoodOrder } = require('../models/Food')
 const { MarketplaceOrder } = require('../models/Marketplace')
-const { ServiceRequest } = require('../models/Service')
+const { ServiceBooking } = require('../models/Service')
+const CustomerRequest = require('../models/CustomerRequest')
 const { DriverProfile } = require('../models/Delivery')
 const { paginatedResponse, notify } = require('../utils/helpers')
 
@@ -16,32 +17,41 @@ exports.getStats = async (req, res) => {
     total_users,
     total_providers,
     total_drivers,
-    today_food_orders,
-    today_marketplace_orders,
+    today_service_requests,
+    today_service_bookings,
     pending_verifications,
     active_drivers,
-    monthly_food_orders,
+    monthly_completed_requests,
+    monthly_completed_bookings,
+    escrowWallets,
   ] = await Promise.all([
     User.countDocuments({ role: 'customer' }),
     User.countDocuments({ role: 'provider' }),
     DriverProfile.countDocuments({ is_approved: true }),
-    FoodOrder.countDocuments({ createdAt: { $gte: todayStart } }),
-    MarketplaceOrder.countDocuments({ createdAt: { $gte: todayStart } }),
+    CustomerRequest.countDocuments({ createdAt: { $gte: todayStart } }),
+    ServiceBooking.countDocuments({ createdAt: { $gte: todayStart } }),
     ProviderProfile.countDocuments({ verification_status: 'pending' }),
     DriverProfile.countDocuments({ is_available: true, is_approved: true }),
-    FoodOrder.find({ createdAt: { $gte: monthStart }, payment_status: 'paid' }).select('total'),
+    CustomerRequest.find({ createdAt: { $gte: monthStart }, payment_status: 'payout_released' }).select('admin_fee'),
+    ServiceBooking.find({ createdAt: { $gte: monthStart }, payment_status: 'payout_released' }).select('admin_fee'),
+    Wallet.find({ locked: { $gt: 0 } }).select('locked'),
   ])
 
-  const monthly_revenue = monthly_food_orders.reduce((s, o) => s + o.total, 0)
+  const monthly_revenue = [...monthly_completed_requests, ...monthly_completed_bookings]
+    .reduce((sum, item) => sum + Number(item.admin_fee || 0), 0)
+  const escrow_balance = escrowWallets.reduce((sum, wallet) => sum + Number(wallet.locked || 0), 0)
 
   res.json({
     total_users,
     total_providers,
     total_drivers,
-    today_orders: today_food_orders + today_marketplace_orders,
+    today_orders: today_service_requests + today_service_bookings,
     monthly_revenue,
     pending_verifications,
     active_drivers,
+    today_service_requests,
+    today_service_bookings,
+    escrow_balance,
   })
 }
 
@@ -205,14 +215,29 @@ exports.getReports = async (req, res) => {
   }
 
   if (type === 'service_requests') {
-    const data = await paginatedResponse(ServiceRequest, {}, {
+    const data = await paginatedResponse(CustomerRequest, {}, {
       page, limit: 20, sort: { createdAt: -1 },
-      populate: { path: 'customer', select: 'first_name last_name' },
+      populate: [
+        { path: 'customer', select: 'first_name last_name' },
+        { path: 'assignedProvider', select: 'first_name last_name' },
+      ],
     })
     return res.json(data)
   }
 
-  res.json({ type, detail: 'Use ?type=food_orders|marketplace_orders|service_requests' })
+  if (type === 'service_bookings') {
+    const data = await paginatedResponse(ServiceBooking, {}, {
+      page, limit: 20, sort: { createdAt: -1 },
+      populate: [
+        { path: 'customer', select: 'first_name last_name' },
+        { path: 'provider', select: 'first_name last_name' },
+        { path: 'service', select: 'title' },
+      ],
+    })
+    return res.json(data)
+  }
+
+  res.json({ type, detail: 'Use ?type=service_requests|service_bookings' })
 }
 
 // GET /api/admin/activity/

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { servicesAPI } from '../../services/api'
 import Button from '../../components/ui/Button'
 
@@ -13,140 +13,186 @@ const SkeletonCard = () => (
 )
 
 export default function BrowseServices() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [services, setServices] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeCategory, setActiveCategory] = useState('')
-  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '')
+
+  const activeCategory = searchParams.get('category') || ''
+  const activeSearch = searchParams.get('search') || ''
 
   useEffect(() => {
-    servicesAPI.categories().then(r => setCategories(r.data)).catch(() => {})
+    setSearchInput(activeSearch)
+  }, [activeSearch])
+
+  useEffect(() => {
+    servicesAPI.categories().then((response) => setCategories(response.data || [])).catch(() => {})
   }, [])
 
   useEffect(() => {
     setLoading(true)
-    const params = { page, search, category: activeCategory || undefined }
-    servicesAPI.list(params)
-      .then(r => {
-        const results = r.data.results || r.data
-        setServices(page === 1 ? results : prev => [...prev, ...results])
-        setHasMore(!!r.data.next)
+    servicesAPI.list({
+      page,
+      search: activeSearch || undefined,
+      category: activeCategory || undefined,
+    })
+      .then((response) => {
+        const results = response.data.results || response.data || []
+        setServices((current) => page === 1 ? results : [...current, ...results])
+        setHasMore(Boolean(response.data.next))
       })
-      .catch(() => {})
+      .catch(() => {
+        if (page === 1) setServices([])
+      })
       .finally(() => setLoading(false))
-  }, [page, activeCategory])
+  }, [page, activeCategory, activeSearch])
 
-  const handleSearch = (e) => {
-    e.preventDefault()
+  const groups = useMemo(() => {
+    const map = new Map()
+    categories.forEach((category) => {
+      if (category.group_slug && !map.has(category.group_slug)) {
+        map.set(category.group_slug, { slug: category.group_slug, name: category.group_name || category.group_slug })
+      }
+    })
+    return Array.from(map.values())
+  }, [categories])
+
+  const updateFilters = ({ category = activeCategory, search = activeSearch }) => {
+    const next = new URLSearchParams()
+    if (category) next.set('category', category)
+    if (search) next.set('search', search)
     setPage(1)
-    setLoading(true)
-    servicesAPI.list({ search, category: activeCategory || undefined })
-      .then(r => {
-        setServices(r.data.results || r.data)
-        setHasMore(!!r.data.next)
-      }).finally(() => setLoading(false))
+    setSearchParams(next)
   }
 
-  const handleCategory = (cat) => {
-    setActiveCategory(cat)
-    setPage(1)
+  const handleSearch = (event) => {
+    event.preventDefault()
+    updateFilters({ search: searchInput.trim(), category: activeCategory })
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="font-display font-bold text-2xl text-slate-900">Browse Services</h1>
-          <p className="text-slate-500 text-sm mt-1">Find skilled professionals in Nyeri County</p>
+          <h1 className="font-display text-2xl font-bold text-slate-900">Browse Services</h1>
+          <p className="mt-1 text-sm text-slate-500">Browse providers by category, then book securely through the existing HudumaLink flow.</p>
         </div>
-        <Link to="/services/request/new" className="btn-primary text-sm py-2 px-4">
+        <Link to="/services/request/new" className="btn-primary px-4 py-2 text-sm">
           + Post Request
         </Link>
       </div>
 
-      {/* Search */}
-      <form onSubmit={handleSearch} className="flex gap-2">
+      <form onSubmit={handleSearch} className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row">
         <div className="relative flex-1">
-          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+          <svg className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
           </svg>
           <input
             type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search services (e.g. plumber, tutor)…"
-            className="input-base pl-10"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Search by service, provider, or location"
+            className="input-base rounded-2xl border-0 bg-slate-50 pl-11"
           />
         </div>
-        <Button type="submit" variant="primary">Search</Button>
+        <Button type="submit">Search</Button>
       </form>
 
-      {/* Categories */}
-      {categories.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          <button
-            onClick={() => handleCategory('')}
-            className={`flex-shrink-0 text-xs font-medium px-3.5 py-2 rounded-full border transition-all ${!activeCategory ? 'bg-primary-600 text-white border-primary-600' : 'border-slate-200 text-slate-600 hover:border-primary-300 hover:text-primary-600'}`}
-          >
-            All
-          </button>
-          {categories.map(c => (
+      {groups.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
             <button
-              key={c.id || c.slug}
-              onClick={() => handleCategory(c.slug || c.id)}
-              className={`flex-shrink-0 text-xs font-medium px-3.5 py-2 rounded-full border transition-all ${activeCategory === (c.slug || c.id) ? 'bg-primary-600 text-white border-primary-600' : 'border-slate-200 text-slate-600 hover:border-primary-300 hover:text-primary-600'}`}
+              type="button"
+              onClick={() => updateFilters({ category: '', search: activeSearch })}
+              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${!activeCategory ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600 hover:border-teal-300 hover:text-teal-700'}`}
             >
-              {c.name}
+              All Categories
             </button>
-          ))}
+            {groups.map((group) => (
+              <button
+                key={group.slug}
+                type="button"
+                onClick={() => updateFilters({ category: group.slug, search: activeSearch })}
+                className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${activeCategory === group.slug ? 'border-teal-600 bg-teal-600 text-white' : 'border-slate-200 text-slate-600 hover:border-teal-300 hover:text-teal-700'}`}
+              >
+                {group.name}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <button
+                key={category.slug || category.id}
+                type="button"
+                onClick={() => updateFilters({ category: category.slug || category.id, search: activeSearch })}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${activeCategory === (category.slug || category.id) ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:text-emerald-700'}`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {loading && page === 1
-          ? Array(6).fill(0).map((_, i) => <SkeletonCard key={i} />)
-          : services.map(s => (
-            <Link key={s._id || s.id} to={`/providers/${s.provider_id || s.id}`} className="card-hover p-5 block group">
-              {s.image && (
-                <img src={s.image} alt={s.title} className="w-full h-36 object-cover rounded-xl mb-4" />
+          ? Array.from({ length: 6 }).map((_, index) => <SkeletonCard key={index} />)
+          : services.map((service) => (
+            <div key={service._id || service.id} className="card-hover overflow-hidden p-5">
+              {service.image && (
+                <img src={service.image} alt={service.title} className="mb-4 h-40 w-full rounded-2xl object-cover" />
               )}
-              <div className="flex items-start justify-between mb-2">
-                <span className="badge bg-primary-50 text-primary-700">{s.category_name || s.category}</span>
-                {s.is_verified && <span className="badge bg-emerald-50 text-emerald-700">✅ Verified</span>}
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="badge bg-primary-50 text-primary-700">{service.parent_category_name || service.category_name || service.category}</span>
+                <span className="badge bg-slate-100 text-slate-700">{service.category_name || service.category}</span>
+                {service.is_verified && <span className="badge bg-emerald-50 text-emerald-700">Verified</span>}
               </div>
-              <h3 className="font-semibold text-slate-900 mb-1 group-hover:text-primary-700 transition-colors">{s.title}</h3>
-              <p className="text-xs text-slate-500 line-clamp-2 mb-3">{s.description}</p>
-              <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">{service.title}</h3>
+              <p className="mt-2 line-clamp-2 text-sm text-slate-500">{service.description}</p>
+              <div className="mt-4 flex items-center justify-between text-sm">
                 <div>
-                  <p className="text-xs text-slate-400">{s.provider_name}</p>
-                  {s.rating && <p className="text-xs text-amber-500 font-medium">{'★'.repeat(Math.round(s.rating))} {s.rating}</p>}
+                  <p className="font-medium text-slate-700">{service.provider_name}</p>
+                  <p className="text-slate-400">{service.location || 'Nyeri Town'}</p>
                 </div>
-                {s.price_from && (
-                  <p className="text-sm font-bold text-primary-600">From KSh {Number(s.price_from).toLocaleString()}</p>
-                )}
+                <p className="font-bold text-primary-700">
+                  {service.price_from ? `KSh ${Number(service.price_from).toLocaleString()}` : 'Quote'}
+                </p>
               </div>
-            </Link>
-          ))
-        }
+              <div className="mt-5 flex gap-2">
+                <Link to={`/providers/${service.provider_id || service._id || service.id}`} className="btn-secondary flex-1 text-center text-sm">
+                  View Provider
+                </Link>
+                <Link
+                  to={`/services/request/new?category=${encodeURIComponent(service.category)}&subservice=${encodeURIComponent(service.category_name || service.category)}&title=${encodeURIComponent(`Need ${service.category_name || service.category} help`)}`}
+                  className="btn-primary flex-1 text-center text-sm"
+                >
+                  Request
+                </Link>
+              </div>
+            </div>
+          ))}
       </div>
 
       {hasMore && (
-        <div className="text-center pt-4">
-          <Button variant="secondary" onClick={() => setPage(p => p + 1)} loading={loading && page > 1}>
+        <div className="pt-4 text-center">
+          <Button variant="secondary" onClick={() => setPage((current) => current + 1)} loading={loading && page > 1}>
             Load More
           </Button>
         </div>
       )}
 
       {!loading && services.length === 0 && (
-        <div className="text-center py-16">
-          <p className="text-4xl mb-3">🔍</p>
-          <p className="font-semibold text-slate-700">No services found</p>
-          <p className="text-sm text-slate-400 mt-1">Try a different search or category</p>
+        <div className="rounded-[28px] border border-dashed border-slate-200 bg-white px-6 py-16 text-center">
+          <p className="text-lg font-semibold text-slate-700">No providers match that filter yet.</p>
+          <p className="mt-2 text-sm text-slate-400">Try another category, adjust your search, or post a request so providers can respond.</p>
+          <Link to="/services/request/new" className="btn-primary mt-5 inline-flex text-sm">
+            Post a Request
+          </Link>
         </div>
       )}
     </div>

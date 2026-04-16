@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { requestsAPI, servicesAPI } from '../../services/api'
 import { useToast } from '../../context/contexts'
 import Input from '../../components/ui/Input'
@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button'
 
 export default function PostServiceRequest() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { toast } = useToast()
   const [categories, setCategories] = useState([])
   const [form, setForm] = useState({ title: '', description: '', category: '', budget: '', location: 'Nyeri Town' })
@@ -16,6 +17,24 @@ export default function PostServiceRequest() {
   useEffect(() => {
     servicesAPI.categories().then((response) => setCategories(response.data)).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    const category = searchParams.get('category') || ''
+    const subservice = searchParams.get('subservice') || ''
+    const title = searchParams.get('title') || ''
+    const description = searchParams.get('description') || ''
+    const location = searchParams.get('location') || ''
+    const budget = searchParams.get('budget') || ''
+
+    setForm((current) => ({
+      ...current,
+      category: category || current.category,
+      title: title || current.title || (subservice ? `Need ${subservice.toLowerCase()} help` : current.title),
+      description: description || current.description,
+      location: location || current.location,
+      budget: budget || current.budget,
+    }))
+  }, [searchParams])
 
   const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }))

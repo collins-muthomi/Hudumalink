@@ -8,7 +8,7 @@ const PLANS = [
     price: 0,
     billing: 'month',
     description: 'Perfect for getting started in Nyeri',
-    features: ['Post up to 3 service requests/month', 'Browse marketplace', 'Order food', 'Basic wallet'],
+    features: ['Post up to 3 service requests/month', 'Browse categorized services', 'Basic wallet', 'Notifications'],
   },
   {
     id: 'pro',
@@ -24,7 +24,7 @@ const PLANS = [
     price: 1499,
     billing: 'month',
     description: 'For established businesses in Nyeri',
-    features: ['Everything in Pro', 'Multiple staff accounts', 'Custom business profile', 'Bulk ordering tools', 'API access', 'White-glove onboarding'],
+    features: ['Everything in Pro', 'Multiple staff accounts', 'Custom business profile', 'Escrow and payout oversight', 'API access', 'White-glove onboarding'],
   },
 ]
 

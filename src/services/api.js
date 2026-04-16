@@ -72,40 +72,7 @@ export const marketplaceAPI = {
   delete: (id) => api.delete(`/marketplace/products/${id}/`),
   categories: () => api.get('/marketplace/categories/'),
   myProducts: () => api.get('/marketplace/products/mine/'),
-  myOrders: (params) => api.get('/marketplace/orders/my/', { params }),
   createOrder: (data) => api.post('/marketplace/orders/', data),
-  orderDetail: (id) => api.get(`/marketplace/orders/${id}/`),
-}
-
-export const foodAPI = {
-  restaurants: (params) => api.get('/food/restaurants/', { params }),
-  restaurantDetail: (id) => api.get(`/food/restaurants/${id}/`),
-  menu: (restaurantId) => api.get(`/food/restaurants/${restaurantId}/menu/`),
-  createOrder: (data) => api.post('/food/orders/', data),
-  myOrders: () => api.get('/food/orders/my/'),
-  orderDetail: (id) => api.get(`/food/orders/${id}/`),
-  trackOrder: (id) => api.get(`/food/orders/${id}/track/`),
-}
-
-export const restaurantOwnerAPI = {
-  dashboard: () => api.get('/food/me/dashboard/'),
-  myRestaurant: () => api.get('/food/me/restaurant/'),
-  createRestaurant: (data) => api.post('/food/me/restaurant/', data),
-  updateRestaurant: (data) => api.patch('/food/me/restaurant/', data),
-  createMenuItem: (data) => api.post('/food/me/menu/', data),
-  updateMenuItem: (id, data) => api.patch(`/food/me/menu/${id}/`, data),
-  deleteMenuItem: (id) => api.delete(`/food/me/menu/${id}/`),
-}
-
-export const deliveryAPI = {
-  register: (data) => api.post('/delivery/register/', data),
-  profile: () => api.get('/delivery/profile/'),
-  updateProfile: (data) => api.patch('/delivery/profile/', data),
-  activeDeliveries: () => api.get('/delivery/active/'),
-  history: (params) => api.get('/delivery/history/', { params }),
-  updateLocation: (data) => api.post('/delivery/location/', data),
-  acceptDelivery: (id) => api.post(`/delivery/${id}/accept/`),
-  completeDelivery: (id) => api.post(`/delivery/${id}/complete/`),
 }
 
 export const notificationsAPI = {

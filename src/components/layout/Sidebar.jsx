@@ -9,10 +9,7 @@ const NAV = {
   customer: [
     { to: '/dashboard/customer', label: 'Dashboard', icon: 'grid' },
     { to: '/services', label: 'Services', icon: 'tool' },
-    { to: '/marketplace', label: 'Marketplace', icon: 'bag' },
-    { to: '/food', label: 'Food Order', icon: 'coffee' },
     { to: '/my-requests', label: 'My Requests', icon: 'clipboard' },
-    { to: '/my-orders', label: 'My Orders', icon: 'package' },
     { to: '/wallet', label: 'Wallet', icon: 'wallet' },
     { to: '/referrals', label: 'Refer & Earn', icon: 'gift' },
     { to: '/notifications', label: 'Notifications', icon: 'bell', badge: true },
@@ -29,14 +26,13 @@ const NAV = {
     { to: '/pricing', label: 'Upgrade Plan', icon: 'zap' },
   ],
   delivery_driver: [
-    { to: '/dashboard/driver', label: 'Dashboard', icon: 'grid' },
+    { to: '/services', label: 'Services', icon: 'tool' },
     { to: '/wallet', label: 'Earnings', icon: 'wallet' },
     { to: '/notifications', label: 'Notifications', icon: 'bell', badge: true },
   ],
   restaurant_owner: [
-    { to: '/dashboard/restaurant', label: 'Dashboard', icon: 'grid' },
-    { to: '/dashboard/restaurant/manage', label: 'My Restaurant', icon: 'store' },
-    { to: '/food', label: 'Public Listing', icon: 'coffee' },
+    { to: '/services', label: 'Services', icon: 'tool' },
+    { to: '/wallet', label: 'Wallet', icon: 'wallet' },
     { to: '/notifications', label: 'Notifications', icon: 'bell', badge: true },
   ],
   admin: [

@@ -1,15 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { servicesAPI } from '../services/api'
 
 export function HudumaLogo({ size = 'md', dark = false }) {
   const s = { sm: [26, 14], md: [33, 18], lg: [42, 23] }[size] || [33, 18]
   return (
     <div className="flex items-center gap-2 select-none">
       <svg width={s[0]} height={s[0]} viewBox="0 0 40 40" fill="none">
-        <path d="M20 2L36 11V29L20 38L4 29V11L20 2Z" fill="#0d9488"/>
-        <circle cx="20" cy="20" r="7" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
-        <path d="M14.5 20.5L18.5 24.5L26 16" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M20 2L36 11V29L20 38L4 29V11L20 2Z" fill="#0d9488" />
+        <circle cx="20" cy="20" r="7" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+        <path d="M14.5 20.5L18.5 24.5L26 16" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <div style={{ lineHeight: 1 }}>
         <div
@@ -22,296 +23,430 @@ export function HudumaLogo({ size = 'md', dark = false }) {
           style={{ fontSize: 9, letterSpacing: '0.12em', color: dark ? 'rgba(255,255,255,0.4)' : '#94a3b8', marginTop: 2 }}
           className="font-medium uppercase"
         >
-          Nyeri County
+          Multi-Service Platform
         </div>
       </div>
     </div>
   )
 }
 
-const CATS = [
-  { e: '⚡', n: 'Electricians', c: '84 nearby', bg: '#fefce8' },
-  { e: '🔧', n: 'Plumbers', c: '61 nearby', bg: '#eff6ff' },
-  { e: '🚗', n: 'Mechanics', c: '43 nearby', bg: '#fef2f2' },
-  { e: '🧹', n: 'Cleaners', c: '118 nearby', bg: '#f0fdf4' },
-  { e: '📱', n: 'Phone Repair', c: '29 nearby', bg: '#faf5ff' },
-  { e: '🪚', n: 'Carpenters', c: '22 nearby', bg: '#fffbeb' },
-  { e: '🎨', n: 'Painters', c: '51 nearby', bg: '#fdf2f8' },
-  { e: '🔌', n: 'Appliance Repair', c: '37 nearby', bg: '#eef2ff' },
-]
-
-const STATS = [
-  { v: '1,240+', l: 'Verified providers' },
-  { v: '4.8★', l: 'Average rating' },
-  { v: '12 min', l: 'Avg. response time' },
-  { v: '8 sub-counties', l: 'Coverage in Nyeri' },
+const CATEGORY_GROUPS = [
+  {
+    slug: 'home-services',
+    name: 'Home Services',
+    icon: '🏠',
+    description: 'Repairs, cleaning, painting, and skilled home help.',
+    subs: [
+      { slug: 'plumbing', name: 'Plumbing' },
+      { slug: 'electrical', name: 'Electrical' },
+      { slug: 'cleaning', name: 'Cleaning' },
+      { slug: 'carpentry', name: 'Carpentry' },
+      { slug: 'painting', name: 'Painting' },
+    ],
+  },
+  {
+    slug: 'beauty',
+    name: 'Beauty',
+    icon: '✂️',
+    description: 'Mobile and studio beauty professionals near you.',
+    subs: [
+      { slug: 'barber', name: 'Barber' },
+      { slug: 'salon', name: 'Salon' },
+      { slug: 'nails', name: 'Nails' },
+      { slug: 'makeup', name: 'Makeup' },
+    ],
+  },
+  {
+    slug: 'tech',
+    name: 'Tech',
+    icon: '💻',
+    description: 'Fast help for phones, laptops, software, and internet setup.',
+    subs: [
+      { slug: 'phone-repair', name: 'Phone Repair' },
+      { slug: 'laptop-repair', name: 'Laptop Repair' },
+      { slug: 'wifi-setup', name: 'WiFi Setup' },
+      { slug: 'software-help', name: 'Software Help' },
+    ],
+  },
+  {
+    slug: 'moving',
+    name: 'Moving',
+    icon: '🚚',
+    description: 'Trusted crews for household and furniture moves.',
+    subs: [
+      { slug: 'house-moving', name: 'House Moving' },
+      { slug: 'furniture-moving', name: 'Furniture Moving' },
+    ],
+  },
+  {
+    slug: 'personal',
+    name: 'Personal',
+    icon: '🌿',
+    description: 'Everyday support for learning, care, and home routines.',
+    subs: [
+      { slug: 'tutoring', name: 'Tutoring' },
+      { slug: 'gardening', name: 'Gardening' },
+      { slug: 'pet-care', name: 'Pet Care' },
+      { slug: 'other', name: 'Other' },
+    ],
+  },
 ]
 
 const NAV_LINKS = [
-  { label: 'Home', to: '/' },
-  { label: 'Providers', to: '/services' },
-  { label: 'Marketplace', to: '/marketplace' },
-  { label: 'Food', to: '/food' },
-  { label: 'How it works', to: '#how' },
-  { label: 'Join as provider', to: '/register' },
+  { label: 'Browse Services', to: '/services' },
+  { label: 'Post Request', to: '/services/request/new' },
+  { label: 'How It Works', to: '#how' },
+  { label: 'Join As Provider', to: '/register' },
+]
+
+const TRUST_POINTS = [
+  { value: 'Escrow Protected', label: 'Customer funds stay secure until work is confirmed' },
+  { value: 'Verified Providers', label: 'Service professionals are reviewed before visibility' },
+  { value: 'One Request Flow', label: 'Categories and subservices feed into the same booking flow' },
 ]
 
 export default function LandingPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [q, setQ] = useState('')
-  const [nav, setNav] = useState(false)
-  const dash = user
-    ? user.role === 'delivery_driver'
-      ? '/dashboard/driver'
-      : user.role === 'restaurant_owner'
-        ? '/dashboard/restaurant'
-        : `/dashboard/${user.role}`
-    : null
+  const [query, setQuery] = useState('')
+  const [navOpen, setNavOpen] = useState(false)
+  const [featuredProviders, setFeaturedProviders] = useState([])
+
+  useEffect(() => {
+    servicesAPI.list({ limit: 4 })
+      .then((response) => setFeaturedProviders(response.data.results || response.data || []))
+      .catch(() => setFeaturedProviders([]))
+  }, [])
+
+  const dashboardPath = useMemo(() => {
+    if (!user) return null
+    if (user.role === 'admin') return '/dashboard/admin'
+    if (user.role === 'provider') return '/dashboard/provider'
+    if (user.role === 'customer') return '/dashboard/customer'
+    return '/services'
+  }, [user])
+
+  const goToServices = (params = {}) => {
+    const next = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) next.set(key, value)
+    })
+    navigate(`/services${next.toString() ? `?${next.toString()}` : ''}`)
+  }
+
+  const goToRequestForm = ({ slug, name }) => {
+    const next = new URLSearchParams({
+      category: slug,
+      subservice: name,
+      title: `Need ${name.toLowerCase()} help`,
+    })
+    navigate(`/services/request/new?${next.toString()}`)
+  }
+
+  const handleHeroSearch = (event) => {
+    event.preventDefault()
+    goToServices({ search: query })
+  }
 
   const handleNavClick = (to) => {
     if (to === '#how') {
-      const section = document.getElementById('how')
-      if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      setNav(false)
+      document.getElementById('how')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setNavOpen(false)
       return
     }
     navigate(to)
-    setNav(false)
+    setNavOpen(false)
   }
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'DM Sans',sans-serif" }}>
-      <nav className="sticky top-0 z-40 bg-white border-b border-slate-100 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center h-16 gap-8">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f0fdfa_0%,#ffffff_34%,#ecfccb_100%)]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <nav className="sticky top-0 z-40 border-b border-white/70 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-4 sm:px-6">
           <Link to="/"><HudumaLogo /></Link>
-          <div className="hidden md:flex items-center gap-7 flex-1">
+          <div className="hidden flex-1 items-center gap-7 md:flex">
             {NAV_LINKS.map((item) => item.to === '#how' ? (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => handleNavClick(item.to)}
-                className="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors"
-              >
+              <button key={item.label} type="button" onClick={() => handleNavClick(item.to)} className="text-sm font-medium text-slate-600 transition-colors hover:text-teal-700">
                 {item.label}
               </button>
             ) : (
-              <Link key={item.label} to={item.to} className="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">
+              <Link key={item.label} to={item.to} className="text-sm font-medium text-slate-600 transition-colors hover:text-teal-700">
                 {item.label}
               </Link>
             ))}
           </div>
-          <div className="hidden md:flex items-center gap-2 ml-auto">
+          <div className="ml-auto hidden items-center gap-2 md:flex">
             {user ? (
-              <Link to={dash} className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">Dashboard →</Link>
+              <Link to={dashboardPath} className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
+                Dashboard
+              </Link>
             ) : (
               <>
-                <Link to="/login" className="flex items-center gap-1.5 text-sm font-medium text-slate-600 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                  </svg>
+                <Link to="/login" className="rounded-xl px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100">
                   Sign in
                 </Link>
-                <Link to="/register" className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm">
+                <Link to="/register" className="rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700">
                   Get started
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                  </svg>
                 </Link>
               </>
             )}
           </div>
-          <button onClick={() => setNav(v => !v)} className="md:hidden ml-auto p-2 rounded-lg text-slate-500 hover:bg-slate-50">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              {nav
-                ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/>}
+          <button type="button" onClick={() => setNavOpen((value) => !value)} className="ml-auto rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              {navOpen
+                ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
             </svg>
           </button>
         </div>
-        {nav && (
-          <div className="md:hidden bg-white border-t border-slate-100 px-4 py-3 space-y-1">
-            {NAV_LINKS.filter((item) => item.label !== 'Home').map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => handleNavClick(item.to)}
-                className="block w-full text-left text-sm font-medium text-slate-600 py-2.5 border-b border-slate-50 last:border-0"
-              >
+        {navOpen && (
+          <div className="space-y-1 border-t border-slate-100 bg-white px-4 py-3 md:hidden">
+            {NAV_LINKS.map((item) => (
+              <button key={item.label} type="button" onClick={() => handleNavClick(item.to)} className="block w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-600 hover:bg-slate-50">
                 {item.label}
               </button>
             ))}
-            <div className="flex gap-3 pt-3">
-              <Link to="/login" className="flex-1 text-center text-sm font-medium border border-slate-200 py-2.5 rounded-xl">Sign in</Link>
-              <Link to="/register" className="flex-1 text-center text-sm font-semibold bg-teal-600 text-white py-2.5 rounded-xl">Get started</Link>
-            </div>
           </div>
         )}
       </nav>
 
-      <section style={{ background: 'linear-gradient(150deg,#0c4535 0%,#0a3a2c 55%,#072e22 100%)' }} className="text-white relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle,rgba(20,184,166,0.12) 0%,transparent 70%)' }}/>
-          <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full" style={{ background: 'radial-gradient(circle,rgba(16,185,129,0.08) 0%,transparent 70%)' }}/>
-        </div>
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-14 pb-0">
-          <span className="inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full border mb-8" style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)' }}>
-            <svg className="w-3 h-3" style={{ color: '#34d399' }} fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
-            </svg>
-            Serving Nyeri County, Kenya
-          </span>
-          <div className="max-w-2xl pb-14">
-            <h1 style={{ fontFamily: 'Sora,sans-serif', lineHeight: 1.08, fontWeight: 700 }} className="text-4xl sm:text-5xl lg:text-6xl mb-5">
-              Book services,
-              <br/>
-              <span style={{ color: '#4ade80' }}>order food fast</span>
-              <br/>
-              near you
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.15),transparent_30%)]" />
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:pb-20 lg:pt-16">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-teal-700">
+              Classified Multi-Service Platform
+            </span>
+            <h1 className="mt-6 max-w-3xl font-display text-4xl font-bold leading-tight text-slate-900 sm:text-5xl lg:text-6xl" style={{ fontFamily: 'Sora, sans-serif' }}>
+              Find the right provider,
+              <span className="block text-teal-700">secure payment in escrow,</span>
+              and track every service cleanly.
             </h1>
-            <p style={{ color: 'rgba(255,255,255,0.6)' }} className="text-base sm:text-lg mb-9 leading-relaxed max-w-lg">
-              Find trusted professionals, shop local in the marketplace, and order food from nearby restaurants with delivery in minutes across Nyeri County.
+            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+              Browse categorized services, choose a trusted provider, pay securely through HudumaLink, and release funds only after the job is complete.
             </p>
-            <form onSubmit={e => { e.preventDefault(); navigate(`/services${q ? `?search=${encodeURIComponent(q)}` : ''}`) }} className="flex items-center bg-white rounded-2xl overflow-hidden shadow-2xl max-w-lg">
-              <div className="flex items-center flex-1 px-4 gap-2.5 min-w-0">
-                <svg className="w-4 h-4 flex-shrink-0" style={{ color: '#94a3b8' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+
+            <form onSubmit={handleHeroSearch} className="mt-8 flex flex-col gap-3 rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_30px_80px_-45px_rgba(15,23,42,0.55)] sm:flex-row">
+              <div className="flex flex-1 items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
                 </svg>
                 <input
-                  value={q}
-                  onChange={e => setQ(e.target.value)}
-                  placeholder="Search e.g. electrician, plumber..."
-                  className="flex-1 text-sm text-slate-700 placeholder-slate-400 outline-none bg-transparent py-3.5 min-w-0"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search plumbing, salon, tutoring, phone repair..."
+                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 sm:text-base"
                 />
               </div>
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-3.5 border-l text-xs font-medium flex-shrink-0" style={{ borderColor: '#e2e8f0', color: '#64748b' }}>
-                <svg className="w-3.5 h-3.5" style={{ color: '#0d9488' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                </svg>
-                All of Nyeri
-                <svg className="w-3 h-3" style={{ color: '#cbd5e1' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </div>
-              <button
-                type="submit"
-                className="flex items-center gap-1.5 text-white text-sm font-semibold px-5 py-3.5 flex-shrink-0 transition-colors"
-                style={{ background: '#0d9488' }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#0f766e' }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#0d9488' }}
-              >
-                Search
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                </svg>
+              <button type="submit" className="rounded-2xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 sm:text-base">
+                Search Services
               </button>
             </form>
-            <div className="flex flex-wrap gap-2 mt-4">
-              {['Electrician', 'Plumber', 'Phone Repair', 'Cleaner', 'Mechanic'].map(t => (
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {['Plumbing', 'Barber', 'WiFi Setup', 'House Moving', 'Tutoring'].map((item) => (
                 <button
-                  key={t}
-                  onClick={() => navigate(`/services?search=${t}`)}
-                  className="text-xs px-3 py-1 rounded-full border transition-all"
-                  style={{ color: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.15)' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.95)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)' }}
-                  onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)' }}
+                  key={item}
+                  type="button"
+                  onClick={() => goToServices({ search: item })}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
                 >
-                  {t}
+                  {item}
                 </button>
               ))}
             </div>
           </div>
+
+          <div className="grid gap-4">
+            <div className="rounded-[30px] bg-[linear-gradient(150deg,#0c4535_0%,#0a3a2c_55%,#072e22_100%)] p-6 text-white shadow-[0_24px_80px_-40px_rgba(12,69,53,0.9)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Escrow Flow</p>
+              <div className="mt-5 space-y-3">
+                {[
+                  'Customer selects provider and confirms service',
+                  'Customer pays through the app into escrow',
+                  'Provider sees payment secured before starting work',
+                  'Customer confirms completion',
+                  'Admin releases payout after commission deduction',
+                ].map((step, index) => (
+                  <div key={step} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                    <span className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400 text-xs font-bold text-slate-950">{index + 1}</span>
+                    <p className="text-sm text-slate-200">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {TRUST_POINTS.map((point) => (
+                <div key={point.value} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-sm font-semibold text-slate-900">{point.value}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{point.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <div style={{ background: 'rgba(0,0,0,0.18)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 grid grid-cols-2 sm:grid-cols-4 divide-x" style={{ '--tw-divide-opacity': 1, borderColor: 'rgba(255,255,255,0.08)' }}>
-            {STATS.map(s => (
-              <div key={s.l} className="text-center px-4">
-                <p style={{ fontFamily: 'Sora,sans-serif', fontWeight: 700, fontSize: 22, color: '#fff' }}>{s.v}</p>
-                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{s.l}</p>
+      </section>
+
+      <section className="py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mb-8 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-700">Categories</p>
+              <h2 className="mt-2 font-display text-3xl font-bold text-slate-900" style={{ fontFamily: 'Sora, sans-serif' }}>
+                Browse services by category
+              </h2>
+            </div>
+            <Link to="/services" className="hidden text-sm font-semibold text-slate-700 transition hover:text-teal-700 sm:block">
+              View all providers
+            </Link>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-5">
+            {CATEGORY_GROUPS.map((group) => (
+              <div key={group.slug} className="group rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl">
+                <button type="button" onClick={() => goToServices({ category: group.slug })} className="w-full text-left">
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">{group.icon}</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 group-hover:text-emerald-700">Browse</span>
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-slate-900">{group.name}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{group.description}</p>
+                </button>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {group.subs.map((sub) => (
+                    <button
+                      key={sub.slug}
+                      type="button"
+                      onClick={() => goToRequestForm(sub)}
+                      className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                    >
+                      {sub.name}
+                    </button>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-10">
-            <h2 style={{ fontFamily: 'Sora,sans-serif', fontWeight: 700, fontSize: 28 }} className="text-slate-900 mb-2">Browse by category</h2>
-            <p className="text-slate-400 text-sm">Find the right professional for any job in Nyeri County</p>
+      <section className="bg-[linear-gradient(150deg,#0c4535_0%,#0a3d31_100%)] py-16 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">Featured Providers</p>
+              <h2 className="mt-2 font-display text-3xl font-bold" style={{ fontFamily: 'Sora, sans-serif' }}>
+                Trusted providers already available
+              </h2>
+            </div>
+            <Link to="/services" className="text-sm font-semibold text-emerald-300 transition hover:text-emerald-200">
+              Browse all services
+            </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {CATS.map(c => (
-              <Link
-                key={c.n}
-                to={`/services?search=${encodeURIComponent(c.n)}`}
-                className="bg-white border border-slate-100 rounded-2xl p-5 sm:p-6 flex flex-col items-center gap-3 transition-all duration-200 group hover:shadow-md"
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#99f6e4' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#f1f5f9' }}
-              >
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" style={{ background: c.bg }}>{c.e}</div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-slate-800 group-hover:text-teal-700 transition-colors">{c.n}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{c.c}</p>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {featuredProviders.length === 0 ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="rounded-[26px] border border-white/10 bg-white/5 p-5">
+                  <div className="skeleton h-24 rounded-2xl" />
                 </div>
-              </Link>
+              ))
+            ) : featuredProviders.map((provider) => (
+              <div key={provider._id || provider.id} className="rounded-[26px] border border-white/10 bg-white/5 p-5 transition hover:border-emerald-400/40 hover:bg-white/10">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
+                      {provider.parent_category_name || provider.category_name || provider.category}
+                    </p>
+                    <h3 className="mt-2 text-lg font-semibold text-white">{provider.provider_name || provider.title}</h3>
+                  </div>
+                  <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-200">
+                    {provider.is_verified ? 'Verified' : 'Active'}
+                  </span>
+                </div>
+                <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-300">{provider.title}</p>
+                <div className="mt-5 flex items-center justify-between text-sm text-slate-300">
+                  <span>{provider.location || 'Nyeri Town'}</span>
+                  <span className="font-semibold text-white">
+                    {provider.price_from ? `From KSh ${Number(provider.price_from).toLocaleString()}` : 'Quote on request'}
+                  </span>
+                </div>
+                <div className="mt-5 flex gap-2">
+                  <Link to={`/providers/${provider.provider_id || provider._id || provider.id}`} className="flex-1 rounded-xl border border-white/15 px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-white/10">
+                    View Provider
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => goToRequestForm({ slug: provider.category, name: provider.category_name || provider.category })}
+                    className="flex-1 rounded-xl bg-teal-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+                  >
+                    Book Now
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="how" className="py-16 bg-white">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <h2 style={{ fontFamily: 'Sora,sans-serif', fontWeight: 700, fontSize: 28 }} className="text-slate-900 mb-2">How it works</h2>
-          <p className="text-slate-400 text-sm mb-12">Book help fast and get meals delivered in minutes</p>
-          <div className="grid sm:grid-cols-3 gap-10">
+      <section id="how" className="py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mb-10 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-700">How It Works</p>
+            <h2 className="mt-2 font-display text-3xl font-bold text-slate-900" style={{ fontFamily: 'Sora, sans-serif' }}>
+              Keep the same request flow, with safer payments
+            </h2>
+          </div>
+          <div className="grid gap-5 md:grid-cols-4">
             {[
-              { n: '1', e: '🔍', t: 'Search & browse', d: 'Find verified professionals, products, and nearby restaurants in Nyeri County.' },
-              { n: '2', e: '🍔', t: 'Order or request', d: 'Post a job, shop the marketplace, or place a food order in just a few taps.' },
-              { n: '3', e: '🚚', t: 'Receive fast', d: 'Pay via M-Pesa and get your food delivered in minutes or your service handled quickly.' },
-            ].map(s => (
-              <div key={s.n} className="flex flex-col items-center">
-                <div className="relative mb-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{ background: '#f0fdfa' }}>{s.e}</div>
-                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-white flex items-center justify-center font-bold" style={{ fontSize: 10, background: '#0d9488' }}>{s.n}</span>
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-2 text-sm">{s.t}</h3>
-                <p className="text-sm text-slate-400 leading-relaxed">{s.d}</p>
+              { title: 'Browse', body: 'Customers browse categories or search for a provider using the existing services route.' },
+              { title: 'Request', body: 'Subservice clicks prefill the current request form so customers stay on the same request flow.' },
+              { title: 'Secure', body: 'Payment is collected through the app and held in escrow before work starts.' },
+              { title: 'Release', body: 'After completion is confirmed, payout is released and commission is deducted automatically.' },
+            ].map((item, index) => (
+              <div key={item.title} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-600 text-sm font-bold text-white">
+                  {index + 1}
+                </span>
+                <h3 className="mt-4 text-lg font-semibold text-slate-900">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{item.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section style={{ background: 'linear-gradient(150deg,#0c4535 0%,#0a3d31 100%)' }} className="py-16">
-        <div className="max-w-xl mx-auto px-4 text-center">
-          <h2 style={{ fontFamily: 'Sora,sans-serif', fontWeight: 700, fontSize: 28, color: '#fff' }} className="mb-3">Ready to get started?</h2>
-          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 14 }} className="mb-8">Join thousands of Nyeri residents already using HudumaLink every day.</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              to="/register"
-              className="font-semibold py-3 px-8 rounded-xl text-sm text-white transition-colors shadow-lg"
-              style={{ background: '#14b8a6' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#0d9488' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#14b8a6' }}
-            >
-              Create Free Account
-            </Link>
-            <Link to="/services" className="font-semibold py-3 px-8 rounded-xl text-sm text-white transition-colors" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
-              Browse Services
-            </Link>
+      <section className="pb-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="rounded-[36px] bg-[linear-gradient(150deg,#0c4535_0%,#0a3d31_100%)] px-6 py-10 text-center text-white shadow-[0_24px_80px_-45px_rgba(12,69,53,0.9)] sm:px-10">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">Ready To Book</p>
+            <h2 className="mt-3 font-display text-3xl font-bold" style={{ fontFamily: 'Sora, sans-serif' }}>
+              Start with a category, a provider, or a request
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-200">
+              HudumaLink now centers the full experience around service categories, provider selection, secure escrow payments, and the existing request flow.
+            </p>
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <Link to="/services" className="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
+                Browse Providers
+              </Link>
+              <Link to="/services/request/new" className="rounded-2xl border border-white/20 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+                Post Service Request
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      <footer style={{ background: '#0f172a', borderTop: '1px solid #1e293b' }} className="py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <HudumaLogo size="sm" dark />
-          <p style={{ fontSize: 12, color: '#475569' }}>© {new Date().getFullYear()} HudumaLink · Nyeri County, Kenya</p>
-          <div className="flex gap-5" style={{ fontSize: 12, color: '#475569' }}>
-            {[['Pricing', '/pricing'], ['Privacy', '#'], ['Terms', '#']].map(([l, to]) => (
-              <Link key={l} to={to} className="hover:text-slate-300 transition-colors">{l}</Link>
-            ))}
+      <footer className="border-t border-slate-200 bg-white py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
+          <HudumaLogo size="sm" />
+          <p className="text-xs text-slate-400">© {new Date().getFullYear()} HudumaLink. Secure classified services for real-world jobs.</p>
+          <div className="flex gap-4 text-xs font-medium text-slate-500">
+            <Link to="/pricing" className="transition hover:text-slate-700">Pricing</Link>
+            <Link to="/services" className="transition hover:text-slate-700">Services</Link>
+            <Link to="/register" className="transition hover:text-slate-700">Become a Provider</Link>
           </div>
         </div>
       </footer>

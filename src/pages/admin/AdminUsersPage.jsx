@@ -111,8 +111,6 @@ export default function AdminUsersPage() {
           <option value="">All roles</option>
           <option value="customer">Customer</option>
           <option value="provider">Provider</option>
-          <option value="delivery_driver">Delivery driver</option>
-          <option value="restaurant_owner">Restaurant</option>
           <option value="admin">Admin</option>
         </select>
         <select
