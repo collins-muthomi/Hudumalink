@@ -8,7 +8,7 @@ import PasswordStrength from '../../components/ui/PasswordStrength'
 import PhoneInputKE from '../../components/ui/PhoneInputKE'
 
 const roles = [
-  { value: 'customer', label: 'Customer', desc: 'Book services & shop', emoji: '🛒' },
+  { value: 'customer', label: 'Customer', desc: 'Book services', emoji: '👤' },
   { value: 'provider', label: 'Service Provider', desc: 'Offer your skills', emoji: '🛠️' },
 ]
 
@@ -53,13 +53,25 @@ export default function Register() {
         password: form.password,
         role: form.role,
       }
-      const user = await register(payload)
-      toast.success('Account created!', `Welcome to HudumaLink, ${user.first_name}!`)
+      const result = await register(payload)
+      if (result?.requiresVerification) {
+        toast.success('Account created!', 'We sent a 6-digit verification code to your email.')
+        navigate('/verify-email', {
+          replace: true,
+          state: {
+            email: payload.email,
+            role: payload.role,
+          },
+        })
+        return
+      }
+
+      toast.success('Account created!', `Welcome to HudumaLink, ${result.first_name}!`)
       const dash = {
         customer: '/dashboard/customer',
         provider: '/dashboard/provider',
       }
-      navigate(dash[user.role] || '/dashboard/customer')
+      navigate(dash[result.role] || '/dashboard/customer')
     } catch (err) {
       const data = err.response?.data
       if (data && typeof data === 'object') {
@@ -116,7 +128,7 @@ export default function Register() {
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="First name"
-                placeholder="John"
+                placeholder=""
                 value={form.first_name}
                 onChange={e => set('first_name', e.target.value)}
                 error={errors.first_name}
@@ -124,7 +136,7 @@ export default function Register() {
               />
               <Input
                 label="Last name"
-                placeholder="Kamau"
+                placeholder=""
                 value={form.last_name}
                 onChange={e => set('last_name', e.target.value)}
                 error={errors.last_name}

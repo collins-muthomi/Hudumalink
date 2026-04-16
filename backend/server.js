@@ -86,6 +86,8 @@ const authLimiter = rateLimit({
 app.use('/api', globalLimiter)
 app.use('/api/auth/login', authLimiter)
 app.use('/api/auth/register', authLimiter)
+app.use('/api/auth/verify-email', authLimiter)
+app.use('/api/auth/resend-verification-code', authLimiter)
 
 app.get('/health', (req, res) => {
   res.json({

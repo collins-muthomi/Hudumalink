@@ -40,11 +40,38 @@ export function AuthProvider({ children }) {
     setError(null)
     const res = await authAPI.register(data)
     const { access, refresh, user: userData } = res.data
-    localStorage.setItem('hl_token', access)
-    if (refresh) localStorage.setItem('hl_refresh', refresh)
-    localStorage.setItem('hl_user', JSON.stringify(userData))
-    setUser(userData)
-    return userData
+    if (access && userData) {
+      localStorage.setItem('hl_token', access)
+      if (refresh) localStorage.setItem('hl_refresh', refresh)
+      localStorage.setItem('hl_user', JSON.stringify(userData))
+      setUser(userData)
+      return userData
+    }
+
+    localStorage.removeItem('hl_token')
+    localStorage.removeItem('hl_refresh')
+    localStorage.removeItem('hl_user')
+    setUser(null)
+    return res.data
+  }, [])
+
+  const verifyEmail = useCallback(async (data) => {
+    setError(null)
+    const res = await authAPI.verifyEmail(data)
+    const { access, refresh, user: userData } = res.data
+    if (access && userData) {
+      localStorage.setItem('hl_token', access)
+      if (refresh) localStorage.setItem('hl_refresh', refresh)
+      localStorage.setItem('hl_user', JSON.stringify(userData))
+      setUser(userData)
+    }
+    return res.data
+  }, [])
+
+  const resendVerificationCode = useCallback(async (data) => {
+    setError(null)
+    const res = await authAPI.resendVerificationCode(data)
+    return res.data
   }, [])
 
   const logout = useCallback(async () => {
@@ -61,7 +88,18 @@ export function AuthProvider({ children }) {
     localStorage.setItem('hl_user', JSON.stringify(updated))
   }, [user])
 
-  const value = { user, loading, error, login, register, logout, updateUser, isAuthenticated: !!user }
+  const value = {
+    user,
+    loading,
+    error,
+    login,
+    register,
+    verifyEmail,
+    resendVerificationCode,
+    logout,
+    updateUser,
+    isAuthenticated: !!user,
+  }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

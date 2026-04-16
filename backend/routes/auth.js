@@ -3,6 +3,8 @@ const ctrl = require('../controllers/authController')
 const { protect } = require('../middleware/auth')
 
 router.post('/register/', ctrl.register)
+router.post('/verify-email/', ctrl.verifyEmail)
+router.post('/resend-verification-code/', ctrl.resendVerificationCode)
 router.post('/login/', ctrl.login)
 router.post('/logout/', protect, ctrl.logout)
 router.get('/me/', protect, ctrl.me)

@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
   role:        { type: String, enum: ['customer', 'provider', 'delivery_driver', 'restaurant_owner', 'admin'], default: 'customer' },
   is_active:   { type: Boolean, default: true },
   is_verified: { type: Boolean, default: false },
+  emailVerificationCode: { type: String, default: null, select: false },
+  emailVerificationExpires: { type: Date, default: null, select: false },
   avatar:      { type: String, default: null },
   referral_code:   { type: String, unique: true, sparse: true },
   referred_by:     { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
@@ -20,6 +22,14 @@ const userSchema = new mongoose.Schema({
   suspension_reason: { type: String, default: null },
   suspended_at: { type: Date, default: null },
 }, { timestamps: true })
+
+userSchema.virtual('isVerified')
+  .get(function () {
+    return this.is_verified
+  })
+  .set(function (value) {
+    this.is_verified = value
+  })
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next()
@@ -32,9 +42,11 @@ userSchema.methods.comparePassword = function (candidate) {
 }
 
 userSchema.methods.toJSON = function () {
-  const obj = this.toObject()
+  const obj = this.toObject({ virtuals: true })
   delete obj.password
   delete obj.__v
+  delete obj.emailVerificationCode
+  delete obj.emailVerificationExpires
   return obj
 }
 

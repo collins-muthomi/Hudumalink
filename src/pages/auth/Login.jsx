@@ -44,6 +44,13 @@ export default function Login() {
       navigate(from || roleDash[user.role] || '/dashboard/customer')
     } catch (err) {
       const msg = err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || 'Invalid credentials. Please try again.'
+      if (err.response?.data?.requiresVerification) {
+        navigate('/verify-email', {
+          state: {
+            email: err.response?.data?.email || form.email,
+          },
+        })
+      }
       toast.error('Login failed', msg)
       setErrors({ general: msg })
     } finally {

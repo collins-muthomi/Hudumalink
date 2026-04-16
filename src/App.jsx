@@ -14,6 +14,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import NotFound from './pages/NotFound'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import VerifyEmail from './pages/auth/VerifyEmail'
 import CustomerDashboard from './pages/dashboards/CustomerDashboard'
 import ProviderDashboard from './pages/dashboards/ProviderDashboard'
 import AdminDashboard from './pages/dashboards/AdminDashboard'
@@ -53,6 +54,7 @@ export default function App() {
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/pricing" element={<PricingPlans />} />
 
                   <Route element={
