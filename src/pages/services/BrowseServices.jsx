@@ -60,6 +60,24 @@ export default function BrowseServices() {
     return Array.from(map.values())
   }, [categories])
 
+  const activeGroup = useMemo(() => {
+    const directGroup = groups.find((group) => group.slug === activeCategory)
+    if (directGroup) return directGroup
+
+    const matchedCategory = categories.find((category) => (category.slug || category.id) === activeCategory)
+    if (!matchedCategory?.group_slug) return null
+
+    return {
+      slug: matchedCategory.group_slug,
+      name: matchedCategory.group_name || matchedCategory.group_slug,
+    }
+  }, [activeCategory, categories, groups])
+
+  const visibleSubcategories = useMemo(() => {
+    if (!activeGroup) return categories
+    return categories.filter((category) => category.group_slug === activeGroup.slug)
+  }, [activeGroup, categories])
+
   const updateFilters = ({ category = activeCategory, search = activeSearch }) => {
     const next = new URLSearchParams()
     if (category) next.set('category', category)
@@ -124,17 +142,34 @@ export default function BrowseServices() {
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <button
-                key={category.slug || category.id}
-                type="button"
-                onClick={() => updateFilters({ category: category.slug || category.id, search: activeSearch })}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${activeCategory === (category.slug || category.id) ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:text-emerald-700'}`}
-              >
-                {category.name}
-              </button>
-            ))}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {activeGroup ? `${activeGroup.name} subcategories` : 'All subcategories'}
+              </p>
+              {activeGroup && (
+                <button
+                  type="button"
+                  onClick={() => updateFilters({ category: activeGroup.slug, search: activeSearch })}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${activeCategory === activeGroup.slug ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:text-emerald-700'}`}
+                >
+                  All {activeGroup.name}
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {visibleSubcategories.map((category) => (
+                <button
+                  key={category.slug || category.id}
+                  type="button"
+                  onClick={() => updateFilters({ category: category.slug || category.id, search: activeSearch })}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${activeCategory === (category.slug || category.id) ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:text-emerald-700'}`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

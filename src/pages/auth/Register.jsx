@@ -18,7 +18,7 @@ export default function Register() {
   const navigate = useNavigate()
 
   const [form, setForm] = useState({
-    first_name: '', last_name: '', email: '', phone: '', password: '', confirm_password: '', role: 'customer',
+    first_name: '', last_name: '', email: '', phone: '', password: '', confirm_password: '', role: 'customer', agree_legal: false, marketing_consent: false,
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
@@ -35,6 +35,7 @@ export default function Register() {
     if (!form.password) e.password = 'Password is required'
     else if (form.password.length < 8) e.password = 'At least 8 characters required'
     if (form.password !== form.confirm_password) e.confirm_password = 'Passwords do not match'
+    if (!form.agree_legal) e.agree_legal = 'You must agree to the Terms of Service and Privacy Policy.'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -172,6 +173,40 @@ export default function Register() {
               autoComplete="new-password"
             />
 
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.agree_legal}
+                  onChange={(e) => set('agree_legal', e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="text-xs leading-6 text-slate-600">
+                  I agree to the{' '}
+                  <Link to="/terms" className="font-medium text-primary-600 underline underline-offset-2 transition hover:text-primary-700">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="/privacy" className="font-medium text-primary-600 underline underline-offset-2 transition hover:text-primary-700">
+                    Privacy Policy
+                  </Link>.
+                </span>
+              </label>
+              {errors.agree_legal && <p className="text-xs text-red-500">{errors.agree_legal}</p>}
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.marketing_consent}
+                  onChange={(e) => set('marketing_consent', e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="text-xs leading-6 text-slate-500">
+                  I want to receive news, updates, and exclusive offers.
+                </span>
+              </label>
+            </div>
+
             {errors.general && (
               <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
                 {errors.general}
@@ -200,9 +235,10 @@ export default function Register() {
           </button>
 
           <p className="text-center mt-5 text-xs text-slate-400">
-            By creating an account, you agree to our{' '}
-            <a href="#" className="text-primary-600 hover:underline">Terms of Service</a> and{' '}
-            <a href="#" className="text-primary-600 hover:underline">Privacy Policy</a>.
+            Review our{' '}
+            <Link to="/terms" className="text-primary-600 hover:underline">Terms of Service</Link>{' '}
+            and{' '}
+            <Link to="/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>.
           </p>
         </div>
 

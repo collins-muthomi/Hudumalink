@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { servicesAPI } from '../services/api'
+import PublicSiteShell from '../components/layout/PublicSiteShell'
 
 export function HudumaLogo({ size = 'md', dark = false }) {
   const s = { sm: [26, 14], md: [33, 18], lg: [42, 23] }[size] || [33, 18]
@@ -94,8 +94,10 @@ const CATEGORY_GROUPS = [
 
 const NAV_LINKS = [
   { label: 'Browse Services', to: '/services' },
+  { label: 'About Us', to: '/about' },
+  { label: 'Contact Us', to: '/contact' },
   { label: 'Post Request', to: '/services/request/new' },
-  { label: 'How It Works', to: '#how' },
+  { label: 'How It Works', to: '/#how' },
   { label: 'Join As Provider', to: '/register' },
 ]
 
@@ -106,10 +108,8 @@ const TRUST_POINTS = [
 ]
 
 export default function LandingPage() {
-  const { user } = useAuth()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
-  const [navOpen, setNavOpen] = useState(false)
   const [featuredProviders, setFeaturedProviders] = useState([])
 
   useEffect(() => {
@@ -117,14 +117,6 @@ export default function LandingPage() {
       .then((response) => setFeaturedProviders(response.data.results || response.data || []))
       .catch(() => setFeaturedProviders([]))
   }, [])
-
-  const dashboardPath = useMemo(() => {
-    if (!user) return null
-    if (user.role === 'admin') return '/dashboard/admin'
-    if (user.role === 'provider') return '/dashboard/provider'
-    if (user.role === 'customer') return '/dashboard/customer'
-    return '/services'
-  }, [user])
 
   const goToServices = (params = {}) => {
     const next = new URLSearchParams()
@@ -148,67 +140,8 @@ export default function LandingPage() {
     goToServices({ search: query })
   }
 
-  const handleNavClick = (to) => {
-    if (to === '#how') {
-      document.getElementById('how')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      setNavOpen(false)
-      return
-    }
-    navigate(to)
-    setNavOpen(false)
-  }
-
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f0fdfa_0%,#ffffff_34%,#ecfccb_100%)]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <nav className="sticky top-0 z-40 border-b border-white/70 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-4 sm:px-6">
-          <Link to="/"><HudumaLogo /></Link>
-          <div className="hidden flex-1 items-center gap-7 md:flex">
-            {NAV_LINKS.map((item) => item.to === '#how' ? (
-              <button key={item.label} type="button" onClick={() => handleNavClick(item.to)} className="text-sm font-medium text-slate-600 transition-colors hover:text-teal-700">
-                {item.label}
-              </button>
-            ) : (
-              <Link key={item.label} to={item.to} className="text-sm font-medium text-slate-600 transition-colors hover:text-teal-700">
-                {item.label}
-              </Link>
-            ))}
-          </div>
-          <div className="ml-auto hidden items-center gap-2 md:flex">
-            {user ? (
-              <Link to={dashboardPath} className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
-                Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link to="/login" className="rounded-xl px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100">
-                  Sign in
-                </Link>
-                <Link to="/register" className="rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700">
-                  Get started
-                </Link>
-              </>
-            )}
-          </div>
-          <button type="button" onClick={() => setNavOpen((value) => !value)} className="ml-auto rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              {navOpen
-                ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
-            </svg>
-          </button>
-        </div>
-        {navOpen && (
-          <div className="space-y-1 border-t border-slate-100 bg-white px-4 py-3 md:hidden">
-            {NAV_LINKS.map((item) => (
-              <button key={item.label} type="button" onClick={() => handleNavClick(item.to)} className="block w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-600 hover:bg-slate-50">
-                {item.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </nav>
-
+    <PublicSiteShell navLinks={NAV_LINKS}>
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.15),transparent_30%)]" />
         <div className="relative mx-auto grid max-w-7xl gap-10 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:pb-20 lg:pt-16">
@@ -438,18 +371,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      <footer className="border-t border-slate-200 bg-white py-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
-          <HudumaLogo size="sm" />
-          <p className="text-xs text-slate-400">© {new Date().getFullYear()} HudumaLink. Secure classified services for real-world jobs.</p>
-          <div className="flex gap-4 text-xs font-medium text-slate-500">
-            <Link to="/pricing" className="transition hover:text-slate-700">Pricing</Link>
-            <Link to="/services" className="transition hover:text-slate-700">Services</Link>
-            <Link to="/register" className="transition hover:text-slate-700">Become a Provider</Link>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </PublicSiteShell>
   )
 }

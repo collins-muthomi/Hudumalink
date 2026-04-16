@@ -7,6 +7,10 @@ import ProtectedRoute from './components/layout/ProtectedRoute'
 import DashboardLayout from './components/layout/DashboardLayout'
 
 import LandingPage from './pages/LandingPage'
+import AboutUs from './pages/AboutUs'
+import ContactUs from './pages/ContactUs'
+import TermsOfService from './pages/TermsOfService'
+import PrivacyPolicy from './pages/PrivacyPolicy'
 import NotFound from './pages/NotFound'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
@@ -43,6 +47,10 @@ export default function App() {
                 <ToastContainer />
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
+                  <Route path="/about" element={<AboutUs />} />
+                  <Route path="/contact" element={<ContactUs />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/pricing" element={<PricingPlans />} />

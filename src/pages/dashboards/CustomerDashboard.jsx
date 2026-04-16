@@ -30,6 +30,14 @@ const quickLinks = [
   { to: '/referrals', icon: 'Earn', label: 'Refer & Earn', color: 'bg-pink-50' },
 ]
 
+const categoryLinks = [
+  { to: '/services?category=home-services', label: 'Home Services', sub: 'Plumbing, electrical, cleaning', color: 'bg-emerald-50 border-emerald-100' },
+  { to: '/services?category=beauty', label: 'Beauty', sub: 'Barber, salon, nails', color: 'bg-rose-50 border-rose-100' },
+  { to: '/services?category=tech', label: 'Tech', sub: 'Phone, laptop, WiFi setup', color: 'bg-sky-50 border-sky-100' },
+  { to: '/services?category=moving', label: 'Moving', sub: 'House and furniture moving', color: 'bg-amber-50 border-amber-100' },
+  { to: '/services?category=personal', label: 'Personal', sub: 'Tutoring, gardening, pet care', color: 'bg-violet-50 border-violet-100' },
+]
+
 export default function CustomerDashboard() {
   const { user } = useAuth()
   const [stats, setStats] = useState(null)
@@ -117,6 +125,25 @@ export default function CustomerDashboard() {
             >
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{quickLink.icon}</span>
               <p className="mt-2 text-xs font-medium text-slate-700">{quickLink.label}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-display text-lg font-semibold text-slate-800">Browse By Category</h2>
+          <Link to="/services" className="text-xs font-medium text-primary-600 hover:underline">See all services</Link>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {categoryLinks.map((category) => (
+            <Link
+              key={category.to}
+              to={category.to}
+              className={`${category.color} rounded-2xl border p-4 transition-transform duration-200 hover:-translate-y-1 hover:border-slate-200`}
+            >
+              <p className="text-sm font-semibold text-slate-800">{category.label}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">{category.sub}</p>
             </Link>
           ))}
         </div>
