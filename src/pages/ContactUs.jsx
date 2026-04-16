@@ -35,7 +35,7 @@ export default function ContactUs() {
   const [sending, setSending] = useState(false)
 
   const contactInfo = useMemo(() => ([
-    { label: 'Call Us', value: '+254 7XX XXX XXX' },
+    { label: 'Call Us', value: '+254 769 666 229' },
     { label: 'Email Us', value: 'support@hudumalink.co.ke' },
     { label: 'Location', value: 'Nyeri, Kenya' },
     { label: 'Operating Hours', value: 'Mon - Sat: 08:00 - 20:00\nSunday: 09:00 - 18:00' },
