@@ -56,6 +56,7 @@ app.use(cors({
     process.env.FRONTEND_URL || 'http://localhost:5173',
     'http://localhost:3000',
     'http://localhost:5174',
+    'https://hudumalink-five.vercel.app',
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -89,6 +90,9 @@ app.use('/api/auth/register', authLimiter)
 app.use('/api/auth/verify-email', authLimiter)
 app.use('/api/auth/resend-verification-code', authLimiter)
 
+// ============================================
+// HEALTH CHECK ROUTE
+// ============================================
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -100,6 +104,39 @@ app.get('/health', (req, res) => {
   })
 })
 
+// ============================================
+// ✅ ROOT ROUTE - FIXES THE 404 ERROR
+// ============================================
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Welcome to HudumaLink API',
+    service: 'HudumaLink Backend Service',
+    version: '1.0.0',
+    location: 'Nyeri County, Kenya',
+    documentation: {
+      health: '/health',
+      auth: '/api/auth',
+      services: '/api/services',
+      serviceRequests: '/api/service-requests',
+      marketplace: '/api/marketplace',
+      requests: '/api/requests',
+      wallet: '/api/wallet',
+      notifications: '/api/notifications',
+      providers: '/api/providers',
+      admin: '/api/admin',
+      referrals: '/api/referrals',
+      reviews: '/api/reviews',
+      plans: '/api/plans',
+    },
+    note: 'Your free instance may take 30-60 seconds to wake up after inactivity on Render free tier',
+    frontend: 'https://hudumalink-five.vercel.app',
+  })
+})
+
+// ============================================
+// API ROUTES
+// ============================================
 app.use('/api/auth', authRoutes)
 app.use('/api/services', servicesRoutes)
 app.use('/api/service-requests', serviceRequestRoutes)
@@ -113,9 +150,15 @@ app.use('/api/referrals', referralRouter)
 app.use('/api/reviews', reviewRouter)
 app.use('/api/plans', plansRouter)
 
+// ============================================
+// ERROR HANDLING (must be last)
+// ============================================
 app.use(notFound)
 app.use(errorHandler)
 
+// ============================================
+// START SERVER
+// ============================================
 const PORT = process.env.PORT || 8000
 
 const startServer = async () => {
@@ -127,6 +170,7 @@ const startServer = async () => {
       console.log(`Socket.IO ready`)
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
       console.log(`Health: /health`)
+      console.log(`Root: /`)
     })
   } catch (error) {
     console.error('Database connection failed:', error)
