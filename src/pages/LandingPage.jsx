@@ -98,7 +98,7 @@ const NAV_LINKS = [
   { label: 'Contact Us', to: '/contact' },
   { label: 'Post Request', to: '/services/request/new' },
   { label: 'How It Works', to: '/#how' },
-  { label: 'Join As Provider', to: '/register' },
+  { label: 'Join', to: '/register' },
 ]
 
 const TRUST_POINTS = [
