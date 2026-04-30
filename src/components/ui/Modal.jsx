@@ -23,16 +23,16 @@ export default function Modal({ open, onClose, title, children, footer, size = '
     <div
       ref={overlayRef}
       onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-slate-950/75 backdrop-blur-sm animate-fade-in transition-colors duration-300"
     >
-      <div className={`w-full ${sizes[size] || sizes.md} bg-white rounded-2xl shadow-2xl animate-slide-up overflow-hidden`}>
+      <div className={`w-full ${sizes[size] || sizes.md} bg-white dark:bg-slate-800 rounded-2xl shadow-2xl animate-slide-up overflow-hidden transition-colors duration-300`}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-display font-semibold text-lg text-slate-900">{title}</h3>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 transition-colors duration-300">
+          <h3 className="font-display font-semibold text-lg text-slate-900 dark:text-white">{title}</h3>
           {showClose && (
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -43,7 +43,7 @@ export default function Modal({ open, onClose, title, children, footer, size = '
         {/* Body */}
         <div className="px-6 py-5">{children}</div>
         {/* Footer */}
-        {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50">{footer}</div>}
+        {footer && <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 transition-colors duration-300">{footer}</div>}
       </div>
     </div>
   )
@@ -65,7 +65,7 @@ export function ConfirmModal({ open, onClose, onConfirm, title, message, confirm
         </div>
       }
     >
-      <p className="text-slate-600 text-sm">{message}</p>
+      <p className="text-slate-600 dark:text-slate-400 text-sm transition-colors duration-300">{message}</p>
     </Modal>
   )
 }

@@ -22,7 +22,7 @@ const categories = [
   { title: 'Beauty', items: ['Barber', 'Salon', 'Nails'] },
   { title: 'Tech', items: ['Phone Repair', 'Laptop Repair', 'WiFi Setup'] },
   { title: 'Moving', items: ['House Moving', 'Furniture Moving'] },
-  { title: 'Personal', items: ['Tutoring', 'Gardening', 'Pet Care'] },
+  { title: 'Personal', items: ['Tutoring', 'Gardening', 'Pet Care', 'Cobbler'] },
 ]
 
 const howItWorks = [

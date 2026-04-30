@@ -110,6 +110,15 @@ const seed = async () => {
       experience_years: 6,
       bio: 'Mathematics and Science tutor for Form 1–4 students. Proven track record of improving grades.',
     },
+    {
+      first_name: 'Samuel',
+      last_name: 'Maina',
+      email: 'samuel@example.com',
+      phone: '+254712000015',
+      service_type: 'Cobbler',
+      experience_years: 8,
+      bio: 'Experienced cobbler offering shoe repair, sole replacement, leather restoration, polishing, and bag repairs around Nyeri.',
+    },
   ]
 
   for (const pd of providerData) {
@@ -270,6 +279,7 @@ const seed = async () => {
     { title: 'KCSE Mathematics Tutor', category: 'tutoring', category_name: 'Tutoring', price_from: 500, description: 'Form 1–4 maths and sciences. Evening and weekend classes. Proven results.', location: 'Nyeri Town' },
     { title: 'Furniture Repair & Carpentry', category: 'carpentry', category_name: 'Carpentry', price_from: 400, description: 'Custom furniture making and repair services. Quality craftsmanship guaranteed.', location: 'Karatina' },
     { title: 'House Painting — Interior & Exterior', category: 'painting', category_name: 'Painting', price_from: 2000, description: 'Professional painters for all types of surfaces. Quality materials used.', location: 'Nyeri Town' },
+    { title: 'Shoe Repair & Leather Restoration', category: 'cobbler', category_name: 'Cobbler', price_from: 250, description: 'Reliable cobbler for sole replacement, stitching, polishing, zip fixes, and general shoe or bag repair.', location: 'Nyeri Town' },
   ]
   for (let i = 0; i < serviceData.length; i++) {
     const provider = providerUsers[i % providerUsers.length]

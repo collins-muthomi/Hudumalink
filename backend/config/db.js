@@ -1,4 +1,9 @@
+const dns = require('dns')
 const mongoose = require('mongoose')
+
+// Use public DNS servers for Atlas SRV resolution when the system resolver refuses SRV queries.
+// This is safe for both local development and deployed environments.
+dns.setServers(['1.1.1.1', '8.8.8.8'])
 
 const connectDB = async () => {
   try {

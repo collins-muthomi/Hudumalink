@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const { PAYMENT_STATUS } = require('../constants/paymentStatus')
 
 const serviceSchema = new mongoose.Schema({
   provider: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -34,8 +35,17 @@ const serviceBookingSchema = new mongoose.Schema({
   },
   payment_status: {
     type: String,
-    enum: ['unpaid', 'paid', 'pending_payment', 'payment_received', 'service_in_progress', 'service_completed', 'payout_pending', 'payout_released'],
-    default: 'pending_payment',
+    enum: [
+      PAYMENT_STATUS.UNPAID,
+      'paid',
+      PAYMENT_STATUS.PENDING_PAYMENT,
+      PAYMENT_STATUS.PAYMENT_RECEIVED,
+      'service_in_progress',
+      'service_completed',
+      PAYMENT_STATUS.PAYOUT_PENDING,
+      PAYMENT_STATUS.PAYOUT_RELEASED,
+    ],
+    default: PAYMENT_STATUS.PENDING_PAYMENT,
   },
   payment_amount: { type: Number, default: 0 },
   admin_fee: { type: Number, default: 0 },

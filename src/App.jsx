@@ -56,6 +56,11 @@ export default function App() {
                   <Route path="/register" element={<Register />} />
                   <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/pricing" element={<PricingPlans />} />
+                  <Route path="/services" element={<BrowseServices />} />
+                  <Route path="/providers/:id" element={<ProviderProfile />} />
+                  <Route path="/marketplace" element={<Navigate to="/services" replace />} />
+                  <Route path="/marketplace/:id" element={<Navigate to="/services" replace />} />
+                  <Route path="/marketplace/sell" element={<Navigate to="/services" replace />} />
 
                   <Route element={
                     <ProtectedRoute>
@@ -93,14 +98,11 @@ export default function App() {
                       </ProtectedRoute>
                     } />
 
-                    <Route path="/services" element={<BrowseServices />} />
                     <Route path="/services/request/new" element={<PostServiceRequest />} />
                     <Route path="/services/request/:id" element={<ServiceRequestDetail />} />
                     <Route path="/my-requests" element={<MyRequests />} />
 
-                    <Route path="/marketplace" element={<Navigate to="/services" replace />} />
-                    <Route path="/marketplace/:id" element={<Navigate to="/services" replace />} />
-                    <Route path="/marketplace/sell" element={<Navigate to="/services" replace />} />
+                    <Route path="/services/bookings/:id" element={<ServiceBookingDetail />} />
 
                     <Route path="/dashboard/provider/verification" element={
                       <ProtectedRoute allowedRoles={['provider']}>

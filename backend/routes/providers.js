@@ -2,6 +2,7 @@ const router = require('express').Router()
 const ctrl = require('../controllers/providerController')
 const { protect, requireRole } = require('../middleware/auth')
 const { upload } = require('../config/cloudinary')
+const { objectIdValidation, handleValidationErrors } = require('../middleware/validation')
 
 const verificationUpload = upload('verification').fields([
   { name: 'id_front', maxCount: 1 },
@@ -24,6 +25,6 @@ router.post('/verification/', protect, requireRole('provider'), verificationUplo
 router.get('/verification/status/', protect, requireRole('provider'), ctrl.verificationStatus)
 
 // Public profile
-router.get('/:id/', ctrl.getProfile)
+router.get('/:id/', objectIdValidation('id'), handleValidationErrors, ctrl.getProfile)
 
 module.exports = router

@@ -15,7 +15,25 @@ const signRefreshToken = (id) =>
 const sendTokens = (user, res, statusCode = 200) => {
   const access = signToken(user._id)
   const refresh = signRefreshToken(user._id)
-  res.status(statusCode).json({ access, refresh, user })
+
+  // Set HTTP-only cookies for security
+  const isProduction = process.env.NODE_ENV === 'production'
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'strict' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours for access token
+  }
+
+  const refreshCookieOptions = {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for refresh token
+  }
+
+  res.cookie('accessToken', access, cookieOptions)
+  res.cookie('refreshToken', refresh, refreshCookieOptions)
+
+  res.status(statusCode).json({ user })
 }
 
 // ─── Referral code ───────────────────────────────────────
@@ -48,40 +66,41 @@ const paginatedResponse = async (Model, filter, options = {}) => {
 }
 
 // ─── Push notification ───────────────────────────────────
-const notify = async (userId, { type = 'system', title, message = '', data = {} }) => {
+const notify = async (userId, { type = 'system', title, message = '', data = {} }, session = null) => {
   try {
-    await Notification.create({ user: userId, type, title, message, data })
+    const notification = new Notification({ user: userId, type, title, message, data })
+    await notification.save({ session })
   } catch {}
 }
 
-const notifyAdmins = async (payload) => {
+const notifyAdmins = async (payload, session = null) => {
   try {
-    const admins = await User.find({ role: 'admin', is_active: true }).select('_id')
-    await Promise.all(admins.map((admin) => notify(admin._id, payload)))
+    const admins = await User.find({ role: 'admin', is_active: true }).select('_id').session(session)
+    await Promise.all(admins.map((admin) => notify(admin._id, payload, session)))
   } catch {}
 }
 
 // ─── Wallet helpers ──────────────────────────────────────
-const getOrCreateWallet = async (userId) => {
-  let wallet = await Wallet.findOne({ user: userId })
-  if (!wallet) wallet = await Wallet.create({ user: userId, balance: 0 })
+const getOrCreateWallet = async (userId, session = null) => {
+  let wallet = await Wallet.findOne({ user: userId }).session(session)
+  if (!wallet) wallet = await Wallet.create([{ user: userId, balance: 0 }], { session }).then((docs) => docs[0])
   return wallet
 }
 
-const creditWallet = async (userId, amount, description, reference = null) => {
-  const wallet = await getOrCreateWallet(userId)
+const creditWallet = async (userId, amount, description, reference = null, session = null) => {
+  const wallet = await getOrCreateWallet(userId, session)
   wallet.balance += amount
-  await wallet.save()
-  await Transaction.create({ user: userId, type: 'credit', amount, description, reference, status: 'completed' })
+  await wallet.save({ session })
+  await Transaction.create([{ user: userId, type: 'credit', amount, description, reference, status: 'completed' }], { session })
   return wallet
 }
 
-const debitWallet = async (userId, amount, description, reference = null) => {
-  const wallet = await getOrCreateWallet(userId)
+const debitWallet = async (userId, amount, description, reference = null, session = null) => {
+  const wallet = await getOrCreateWallet(userId, session)
   if (wallet.balance < amount) throw Object.assign(new Error('Insufficient wallet balance.'), { statusCode: 400 })
   wallet.balance -= amount
-  await wallet.save()
-  await Transaction.create({ user: userId, type: 'debit', amount, description, reference, status: 'completed' })
+  await wallet.save({ session })
+  await Transaction.create([{ user: userId, type: 'debit', amount, description, reference, status: 'completed' }], { session })
   return wallet
 }
 

@@ -23,7 +23,7 @@ export default function DashboardLayout() {
   }, [])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
 
       {/* Desktop sidebar — fixed height, internal scroll */}
       <div className="hidden lg:flex lg:flex-shrink-0">
@@ -51,7 +51,7 @@ export default function DashboardLayout() {
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         {/* Scrollable page content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
           <Outlet />
         </main>
       </div>

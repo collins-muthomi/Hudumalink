@@ -2,6 +2,7 @@ const { protect } = require('../middleware/auth')
 const refCtrl = require('../controllers/referralController')
 const revCtrl = require('../controllers/reviewsController')
 const plansCtrl = require('../controllers/plansController')
+const { objectIdValidation, handleValidationErrors } = require('../middleware/validation')
 
 // ─── Referrals ───────────────────────────────────────────
 const referralRouter = require('express').Router()
@@ -15,7 +16,7 @@ referralRouter.get('/history/', refCtrl.history)
 const reviewRouter = require('express').Router()
 reviewRouter.get('/mine/', protect, revCtrl.myReviews)
 reviewRouter.post('/', protect, revCtrl.createReview)
-reviewRouter.get('/:type/:id/', revCtrl.listReviews)
+reviewRouter.get('/:type/:id/', objectIdValidation('id'), handleValidationErrors, revCtrl.listReviews)
 
 // ─── Plans ───────────────────────────────────────────────
 const plansRouter = require('express').Router()

@@ -6,6 +6,7 @@ import Input from '../../components/ui/Input'
 import Button from '../../components/ui/Button'
 import PasswordStrength from '../../components/ui/PasswordStrength'
 import PhoneInputKE from '../../components/ui/PhoneInputKE'
+import { HudumaLogo } from '../LandingPage'
 
 const roles = [
   { value: 'customer', label: 'Customer', desc: 'Book services', emoji: '👤' },
@@ -90,17 +91,14 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50 flex items-center justify-center p-4 py-10">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4 py-10 transition-colors duration-300">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2.5 mb-6">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-glow">
-              <span className="text-white font-display font-bold text-lg">H</span>
-            </div>
-            <span className="font-display font-bold text-slate-900 text-xl">HudumaLink</span>
+          <Link to="/" className="inline-flex items-center mb-6">
+            <HudumaLogo />
           </Link>
-          <h1 className="font-display font-bold text-2xl text-slate-900">Create your account</h1>
-          <p className="text-slate-500 mt-1 text-sm">Join Nyeri's #1 super app</p>
+          <h1 className="font-display font-bold text-2xl text-slate-900 dark:text-slate-100">Create your account</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Join Nyeri's #1 super app</p>
         </div>
 
         <div className="card p-8 shadow-card">

@@ -3,9 +3,17 @@ const { ProviderProfile } = require('../models/index')
 const { SERVICE_CATEGORIES } = require('./servicesController')
 const { paginatedResponse, notify, notifyAdmins } = require('../utils/helpers')
 const { releaseEscrowPayment, ESCROW_PENDING_STATES } = require('./walletController')
+const { PAYMENT_STATUS } = require('../constants/paymentStatus')
 
 const REQUEST_STATUS_FLOW = ['open', 'assigned', 'in_progress', 'completion_requested', 'completed']
-const PAYMENT_STATUS_FLOW = ['pending_payment', 'payment_received', 'service_in_progress', 'service_completed', 'payout_pending', 'payout_released']
+const PAYMENT_STATUS_FLOW = [
+  PAYMENT_STATUS.PENDING_PAYMENT,
+  PAYMENT_STATUS.PAYMENT_RECEIVED,
+  'service_in_progress',
+  'service_completed',
+  PAYMENT_STATUS.PAYOUT_PENDING,
+  PAYMENT_STATUS.PAYOUT_RELEASED,
+]
 
 const getCategoryMeta = (category) =>
   SERVICE_CATEGORIES.find((item) => item.slug === category || item.id === category)
@@ -184,14 +192,14 @@ exports.updateRequestStatus = async (req, res) => {
       return res.status(400).json({ detail: 'Invalid payment status.' })
     }
 
-    if (payment_status === 'payout_pending') {
+    if (payment_status === PAYMENT_STATUS.PAYOUT_PENDING) {
       if (!isProvider && req.user.role !== 'admin') {
         return res.status(403).json({ detail: 'Only the provider can request payout.' })
       }
       if (request.status !== 'completed') {
         return res.status(400).json({ detail: 'The request must be completed before payout can be requested.' })
       }
-      if (!['service_completed', 'payment_received', 'service_in_progress'].includes(request.payment_status)) {
+      if (!['service_completed', PAYMENT_STATUS.PAYMENT_RECEIVED, 'service_in_progress'].includes(request.payment_status)) {
         return res.status(400).json({ detail: 'Escrow payment must be secured before payout can be requested.' })
       }
 
@@ -205,7 +213,7 @@ exports.updateRequestStatus = async (req, res) => {
         message: `${request.title} is ready for payout release.`,
         data: { requestId: request._id.toString(), payment_status: 'payout_pending' },
       })
-    } else if (payment_status === 'payout_released') {
+    } else if (payment_status === PAYMENT_STATUS.PAYOUT_RELEASED) {
       if (req.user.role !== 'admin') {
         return res.status(403).json({ detail: 'Only admin can release payout.' })
       }

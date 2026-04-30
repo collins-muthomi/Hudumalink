@@ -181,6 +181,9 @@ exports.login = async (req, res) => {
 
 // POST /api/auth/logout/
 exports.logout = async (req, res) => {
+  // Clear HTTP-only cookies
+  res.clearCookie('accessToken')
+  res.clearCookie('refreshToken')
   res.json({ detail: 'Logged out successfully.' })
 }
 
@@ -191,7 +194,7 @@ exports.me = async (req, res) => {
 
 // POST /api/auth/token/refresh/
 exports.refreshToken = async (req, res) => {
-  const { refresh } = req.body
+  const refresh = req.cookies.refreshToken
   if (!refresh) return res.status(400).json({ detail: 'Refresh token required.' })
   try {
     const decoded = jwt.verify(refresh, process.env.JWT_REFRESH_SECRET)
@@ -201,7 +204,18 @@ exports.refreshToken = async (req, res) => {
       return res.status(403).json({ detail: 'Please verify your email before logging in' })
     }
     const access = signToken(user._id)
-    res.json({ access })
+
+    // Set new access token cookie
+    const isProduction = process.env.NODE_ENV === 'production'
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    }
+
+    res.cookie('accessToken', access, cookieOptions)
+    res.json({ user })
   } catch {
     res.status(401).json({ detail: 'Invalid or expired refresh token.' })
   }

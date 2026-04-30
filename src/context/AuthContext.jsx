@@ -1,55 +1,65 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { authAPI } from '../services/api'
+import { joinWalletRoom, leaveWalletRoom, disconnectSocket } from '../services/socket'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem('hl_user')
-      return stored ? JSON.parse(stored) : null
-    } catch { return null }
-  })
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null) // Start with null instead of checking localStorage
+  const [loading, setLoading] = useState(false) // Start with false
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    const token = localStorage.getItem('hl_token')
-    if (token) {
-      authAPI.me()
-        .then(res => { setUser(res.data); localStorage.setItem('hl_user', JSON.stringify(res.data)) })
-        .catch(() => { localStorage.removeItem('hl_token'); localStorage.removeItem('hl_user'); setUser(null) })
-        .finally(() => setLoading(false))
-    } else {
+  // Remove automatic auth check - only check when explicitly needed
+  const checkAuth = useCallback(async () => {
+    if (loading) return
+
+    setLoading(true)
+    try {
+      const res = await authAPI.me()
+      setUser(res.data)
+      localStorage.setItem('hl_user', JSON.stringify(res.data))
+      joinWalletRoom(res.data._id)
+      setError(null)
+    } catch (error) {
+      localStorage.removeItem('hl_user')
+      localStorage.removeItem('hl_token')
+      localStorage.removeItem('hl_refresh')
+      setUser(null)
+      setError(error.response?.data?.detail || 'Authentication failed')
+    } finally {
       setLoading(false)
     }
-  }, [])
+  }, [loading])
 
   const login = useCallback(async (credentials) => {
     setError(null)
-    const res = await authAPI.login(credentials)
-    const { access, refresh, user: userData } = res.data
-    localStorage.setItem('hl_token', access)
-    if (refresh) localStorage.setItem('hl_refresh', refresh)
-    localStorage.setItem('hl_user', JSON.stringify(userData))
-    setUser(userData)
-    return userData
+    setLoading(true)
+    try {
+      const res = await authAPI.login(credentials)
+      const { user: userData } = res.data
+      localStorage.setItem('hl_user', JSON.stringify(userData))
+      setUser(userData)
+      joinWalletRoom(userData._id)
+      setError(null)
+      return userData
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Login failed')
+      throw error
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   const register = useCallback(async (data) => {
     setError(null)
     const res = await authAPI.register(data)
-    const { access, refresh, user: userData } = res.data
-    if (access && userData) {
-      localStorage.setItem('hl_token', access)
-      if (refresh) localStorage.setItem('hl_refresh', refresh)
+    const { user: userData } = res.data
+    if (userData) {
       localStorage.setItem('hl_user', JSON.stringify(userData))
       setUser(userData)
       return userData
     }
 
-    localStorage.removeItem('hl_token')
-    localStorage.removeItem('hl_refresh')
     localStorage.removeItem('hl_user')
     setUser(null)
     return res.data
@@ -58,10 +68,8 @@ export function AuthProvider({ children }) {
   const verifyEmail = useCallback(async (data) => {
     setError(null)
     const res = await authAPI.verifyEmail(data)
-    const { access, refresh, user: userData } = res.data
-    if (access && userData) {
-      localStorage.setItem('hl_token', access)
-      if (refresh) localStorage.setItem('hl_refresh', refresh)
+    const { user: userData } = res.data
+    if (userData) {
       localStorage.setItem('hl_user', JSON.stringify(userData))
       setUser(userData)
     }
@@ -76,11 +84,13 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try { await authAPI.logout() } catch {}
-    localStorage.removeItem('hl_token')
-    localStorage.removeItem('hl_refresh')
+    if (user) {
+      leaveWalletRoom(user._id)
+    }
+    disconnectSocket()
     localStorage.removeItem('hl_user')
     setUser(null)
-  }, [])
+  }, [user])
 
   const updateUser = useCallback((data) => {
     const updated = { ...user, ...data }
@@ -92,6 +102,7 @@ export function AuthProvider({ children }) {
     user,
     loading,
     error,
+    checkAuth,
     login,
     register,
     verifyEmail,

@@ -13,7 +13,7 @@ const Input = forwardRef(function Input(
       {label && <label className="label-base">{label}</label>}
       <div className="relative">
         {leftIcon && (
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 dark:text-slate-500">
             {leftIcon}
           </div>
         )}
@@ -24,7 +24,7 @@ const Input = forwardRef(function Input(
             'input-base',
             leftIcon ? 'pl-10' : '',
             (rightIcon || isPassword) ? 'pr-10' : '',
-            error ? 'border-red-400 focus:ring-red-400' : '',
+            error ? 'border-red-400 focus:ring-red-400 dark:border-red-500 dark:focus:ring-red-500' : '',
             className,
           ].join(' ')}
           {...props}
@@ -34,7 +34,7 @@ const Input = forwardRef(function Input(
             type="button"
             tabIndex={-1}
             onClick={() => setShowPwd(v => !v)}
-            className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 transition-colors"
+            className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 transition-colors"
           >
             {showPwd ? (
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -49,13 +49,13 @@ const Input = forwardRef(function Input(
           </button>
         )}
         {rightIcon && !isPassword && (
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 dark:text-slate-500">
             {rightIcon}
           </div>
         )}
       </div>
-      {error && <p className="mt-1.5 text-xs text-red-500">{error}</p>}
-      {hint && !error && <p className="mt-1.5 text-xs text-slate-400">{hint}</p>}
+      {error && <p className="mt-1.5 text-xs text-red-500 dark:text-red-400 transition-colors duration-300">{error}</p>}
+      {hint && !error && <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500 transition-colors duration-300">{hint}</p>}
     </div>
   )
 })

@@ -4,8 +4,16 @@ const User = require('../models/User')
 // ─── Protect route — require valid JWT ──────────────────
 const protect = async (req, res, next) => {
   let token
-  const auth = req.headers.authorization
-  if (auth && auth.startsWith('Bearer ')) token = auth.split(' ')[1]
+
+  // Check for token in cookies first (secure method)
+  if (req.cookies.accessToken) {
+    token = req.cookies.accessToken
+  }
+  // Fallback to Authorization header for backward compatibility
+  else {
+    const auth = req.headers.authorization
+    if (auth && auth.startsWith('Bearer ')) token = auth.split(' ')[1]
+  }
 
   if (!token) return res.status(401).json({ detail: 'Authentication required.' })
 

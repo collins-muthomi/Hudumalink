@@ -29,7 +29,7 @@ export default function ReferralPage() {
   }
 
   const handleShare = () => {
-    const msg = `Join HudumaLink — Nyeri's #1 super app! Use my code ${data?.referral_code} to get a bonus. Download at hudumalink.co.ke`
+    const msg = `Join HudumaLink — Nyeri's #1 super app! Use my code ${data?.referral_code} to get a bonus. Download at https://hudumalink-five.vercel.app/`
     if (navigator.share) {
       navigator.share({ title: 'Join HudumaLink', text: msg })
     } else {

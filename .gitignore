@@ -1,1 +1,10 @@
 node_modules
+dist
+.env
+.env.local
+backend/.env
+backend/.env.development
+fetch-test.mjs
+socket-test.js
+socket-test.cjs
+test-socket.js

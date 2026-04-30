@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { servicesAPI } from '../../services/api'
 import Button from '../../components/ui/Button'
 
@@ -19,6 +20,7 @@ export default function BrowseServices() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  const { user } = useAuth()
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '')
 
   const activeCategory = searchParams.get('category') || ''
@@ -97,6 +99,12 @@ export default function BrowseServices() {
         <div>
           <h1 className="font-display text-2xl font-bold text-slate-900">Browse Services</h1>
           <p className="mt-1 text-sm text-slate-500">Browse providers by category, then book securely through the existing HudumaLink flow.</p>
+          {!user && (
+            <div className="mt-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+              <p className="font-medium">You can browse services and providers before signing up.</p>
+              <p className="mt-1 text-slate-700">Create an account only when you're ready to request a service or contact a provider.</p>
+            </div>
+          )}
         </div>
         <Link to="/services/request/new" className="btn-primary px-4 py-2 text-sm">
           + Post Request

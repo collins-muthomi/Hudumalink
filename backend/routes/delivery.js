@@ -2,6 +2,7 @@ const router = require('express').Router()
 const ctrl = require('../controllers/deliveryController')
 const { protect } = require('../middleware/auth')
 const { upload } = require('../config/cloudinary')
+const { objectIdValidation, handleValidationErrors } = require('../middleware/validation')
 
 const docUpload = upload('documents').fields([
   { name: 'id_document', maxCount: 1 },
@@ -18,7 +19,7 @@ router.patch('/profile/', ctrl.updateProfile)
 router.get('/active/', ctrl.activeDeliveries)
 router.get('/history/', ctrl.history)
 router.post('/location/', ctrl.updateLocation)
-router.post('/:id/accept/', ctrl.acceptDelivery)
-router.post('/:id/complete/', ctrl.completeDelivery)
+router.post('/:id/accept/', objectIdValidation('id'), handleValidationErrors, ctrl.acceptDelivery)
+router.post('/:id/complete/', objectIdValidation('id'), handleValidationErrors, ctrl.completeDelivery)
 
 module.exports = router

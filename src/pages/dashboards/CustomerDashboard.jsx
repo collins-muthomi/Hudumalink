@@ -35,7 +35,7 @@ const categoryLinks = [
   { to: '/services?category=beauty', label: 'Beauty', sub: 'Barber, salon, nails', color: 'bg-rose-50 border-rose-100' },
   { to: '/services?category=tech', label: 'Tech', sub: 'Phone, laptop, WiFi setup', color: 'bg-sky-50 border-sky-100' },
   { to: '/services?category=moving', label: 'Moving', sub: 'House and furniture moving', color: 'bg-amber-50 border-amber-100' },
-  { to: '/services?category=personal', label: 'Personal', sub: 'Tutoring, gardening, pet care', color: 'bg-violet-50 border-violet-100' },
+  { to: '/services?category=personal', label: 'Personal', sub: 'Tutoring, gardening, pet care, cobbler', color: 'bg-violet-50 border-violet-100' },
 ]
 
 export default function CustomerDashboard() {

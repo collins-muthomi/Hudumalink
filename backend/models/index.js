@@ -7,7 +7,7 @@ const transactionSchema = new mongoose.Schema({
   amount:      { type: Number, required: true, min: 0 },
   description: { type: String, default: '' },
   reference:   { type: String, unique: true, sparse: true },
-  status:      { type: String, enum: ['pending', 'completed', 'failed'], default: 'completed' },
+  status:      { type: String, enum: ['pending', 'processing', 'completed', 'failed'], default: 'completed' },
   mpesa_receipt:{ type: String, default: null },
   metadata:    { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { timestamps: true })

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { plansAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/contexts'
+import { HudumaLogo } from './LandingPage'
 
 const defaultPlans = [
   {
@@ -65,14 +66,11 @@ export default function PricingPlans() {
     : '/login'
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-100 sticky top-0 z-10">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+      <nav className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-10 transition-colors duration-300">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-primary flex items-center justify-center">
-              <span className="text-white font-display font-bold text-sm">H</span>
-            </div>
-            <span className="font-display font-bold text-slate-900">HudumaLink</span>
+          <Link to="/" className="flex items-center">
+            <HudumaLogo />
           </Link>
           {user ? (
             <Link to={dashboardPath} className="btn-ghost text-sm">Dashboard</Link>
@@ -84,13 +82,13 @@ export default function PricingPlans() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 space-y-12">
         <div className="text-center">
-          <h1 className="font-display font-bold text-4xl text-slate-900 mb-3">Simple, transparent pricing</h1>
-          <p className="text-slate-500 max-w-md mx-auto">Choose the plan that works for you. Upgrade or downgrade anytime. Pay in KSh.</p>
+          <h1 className="font-display font-bold text-4xl text-slate-900 dark:text-slate-100 mb-3">Simple, transparent pricing</h1>
+          <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">Choose the plan that works for you. Upgrade or downgrade anytime. Pay in KSh.</p>
 
-          <div className="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-full p-1 mt-6">
+          <div className="inline-flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full p-1 mt-6 transition-colors duration-300">
             {['month', 'year'].map(b => (
               <button key={b} onClick={() => setBilling(b)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all capitalize ${billing === b ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all capitalize ${billing === b ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>
                 {b === 'year' ? 'Yearly (save 20%)' : 'Monthly'}
               </button>
             ))}

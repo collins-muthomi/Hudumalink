@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { providerAPI, serviceBookingsAPI } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/contexts'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
@@ -11,6 +12,7 @@ const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
 export default function ProviderProfile() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { toast } = useToast()
   const [provider, setProvider] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -27,6 +29,11 @@ export default function ProviderProfile() {
 
   const handleBook = async () => {
     if (!selectedService) return
+    if (!user) {
+      toast.info('Login first', 'Sign in or register to request services from this provider.')
+      navigate('/login')
+      return
+    }
     setBooking(true)
     try {
       await serviceBookingsAPI.create({
@@ -74,6 +81,16 @@ export default function ProviderProfile() {
         Back
       </button>
 
+      {!user && (
+        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <p className="font-semibold text-slate-900">Browse this provider before signing up.</p>
+          <p className="mt-1">Sign in or register to request a booking and contact the provider directly.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button variant="secondary" onClick={() => navigate('/login')} size="sm">Login</Button>
+            <Button onClick={() => navigate('/register')} size="sm">Register</Button>
+          </div>
+        </div>
+      )}
       <div className="card p-6">
         <div className="flex flex-col sm:flex-row items-start gap-4">
           <div className="w-24 h-24 rounded-3xl bg-gradient-primary flex items-center justify-center text-white font-display font-bold text-3xl overflow-hidden flex-shrink-0">

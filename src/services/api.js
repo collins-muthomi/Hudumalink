@@ -7,7 +7,7 @@ export const authAPI = {
   login: (data) => api.post('/auth/login/', data),
   logout: () => api.post('/auth/logout/'),
   me: () => api.get('/auth/me/'),
-  refreshToken: (refresh) => api.post('/auth/token/refresh/', { refresh }),
+  refreshToken: () => api.post('/auth/token/refresh/'),
   googleAuth: (token) => api.post('/auth/google/', { token }),
   changePassword: (data) => api.post('/auth/change-password/', data),
 }

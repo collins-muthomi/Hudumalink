@@ -3,6 +3,7 @@ const { Service, ServiceBooking } = require('../models/Service')
 const { ProviderProfile } = require('../models/index')
 const { paginatedResponse, notify, notifyAdmins } = require('../utils/helpers')
 const { releaseEscrowPayment, ESCROW_PENDING_STATES } = require('./walletController')
+const { PAYMENT_STATUS } = require('../constants/paymentStatus')
 
 const SERVICE_CATEGORIES = [
   { id: 'plumbing', slug: 'plumbing', name: 'Plumbing', group_slug: 'home-services', group_name: 'Home Services' },
@@ -23,11 +24,19 @@ const SERVICE_CATEGORIES = [
   { id: 'tutoring', slug: 'tutoring', name: 'Tutoring', group_slug: 'personal', group_name: 'Personal' },
   { id: 'gardening', slug: 'gardening', name: 'Gardening', group_slug: 'personal', group_name: 'Personal' },
   { id: 'pet-care', slug: 'pet-care', name: 'Pet Care', group_slug: 'personal', group_name: 'Personal' },
+  { id: 'cobbler', slug: 'cobbler', name: 'Cobbler', group_slug: 'personal', group_name: 'Personal' },
   { id: 'other', slug: 'other', name: 'Other', group_slug: 'personal', group_name: 'Personal' },
 ]
 
 const SERVICE_STATUS_FLOW = ['pending', 'accepted', 'in_progress', 'completion_requested', 'completed', 'cancelled']
-const PAYMENT_STATUS_FLOW = ['pending_payment', 'payment_received', 'service_in_progress', 'service_completed', 'payout_pending', 'payout_released']
+const PAYMENT_STATUS_FLOW = [
+  PAYMENT_STATUS.PENDING_PAYMENT,
+  PAYMENT_STATUS.PAYMENT_RECEIVED,
+  'service_in_progress',
+  'service_completed',
+  PAYMENT_STATUS.PAYOUT_PENDING,
+  PAYMENT_STATUS.PAYOUT_RELEASED,
+]
 
 const getCategoryMeta = (category) =>
   SERVICE_CATEGORIES.find((item) => item.slug === category || item.id === category)
@@ -324,7 +333,7 @@ exports.updateBookingStatus = async (req, res) => {
       return res.status(400).json({ detail: 'Invalid payment status.' })
     }
 
-    if (payment_status === 'payout_pending') {
+    if (payment_status === PAYMENT_STATUS.PAYOUT_PENDING) {
       if (!isProvider && req.user.role !== 'admin') {
         return res.status(403).json({ detail: 'Only the provider can request payout.' })
       }
@@ -345,7 +354,7 @@ exports.updateBookingStatus = async (req, res) => {
         message: `${booking.title} is ready for payout release.`,
         data: { bookingId: booking._id.toString(), payment_status: 'payout_pending' },
       })
-    } else if (payment_status === 'payout_released') {
+    } else if (payment_status === PAYMENT_STATUS.PAYOUT_RELEASED) {
       if (req.user.role !== 'admin') {
         return res.status(403).json({ detail: 'Only admin can release payout.' })
       }

@@ -4,26 +4,27 @@ import { servicesAPI } from '../services/api'
 import PublicSiteShell from '../components/layout/PublicSiteShell'
 
 export function HudumaLogo({ size = 'md', dark = false }) {
-  const s = { sm: [26, 14], md: [33, 18], lg: [42, 23] }[size] || [33, 18]
+  const logoSizes = {
+    sm: { icon: 'h-10 w-10', title: 'text-lg', sub: 'text-[8px]' },
+    md: { icon: 'h-12 w-12', title: 'text-xl', sub: 'text-[9px]' },
+    lg: { icon: 'h-16 w-16', title: 'text-3xl', sub: 'text-[10px]' },
+  }
+  const current = logoSizes[size] || logoSizes.md
   return (
-    <div className="flex items-center gap-2 select-none">
-      <svg width={s[0]} height={s[0]} viewBox="0 0 40 40" fill="none">
-        <path d="M20 2L36 11V29L20 38L4 29V11L20 2Z" fill="#0d9488" />
-        <circle cx="20" cy="20" r="7" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-        <path d="M14.5 20.5L18.5 24.5L26 16" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <div style={{ lineHeight: 1 }}>
-        <div
-          style={{ fontSize: s[1], fontFamily: 'Sora, sans-serif', fontWeight: 700 }}
-          className={dark ? 'text-white' : 'text-slate-900'}
-        >
-          Huduma<span style={{ color: '#14b8a6' }}>Link</span>
+    <div className="flex items-center gap-3 select-none">
+      <div className={`flex items-center justify-center rounded-[22px] bg-white/85 ring-1 ring-emerald-100 shadow-[0_12px_30px_-18px_rgba(5,150,105,0.55)] ${current.icon}`}>
+        <img
+          src="/favicon.svg"
+          alt="HudumaLink mark"
+          className="h-[78%] w-[78%] object-contain"
+        />
+      </div>
+      <div className="leading-none">
+        <div className={`font-display font-bold tracking-[-0.03em] ${current.title} ${dark ? 'text-white' : 'text-slate-900'}`} style={{ fontFamily: 'Sora, sans-serif' }}>
+          Huduma<span className="text-emerald-600">Link</span>
         </div>
-        <div
-          style={{ fontSize: 9, letterSpacing: '0.12em', color: dark ? 'rgba(255,255,255,0.4)' : '#94a3b8', marginTop: 2 }}
-          className="font-medium uppercase"
-        >
-          Multi-Service Platform
+        <div className={`mt-1 font-medium uppercase tracking-[0.22em] ${current.sub} ${dark ? 'text-emerald-200/70' : 'text-emerald-700/70'}`}>
+          Trusted Local Services
         </div>
       </div>
     </div>
@@ -87,6 +88,7 @@ const CATEGORY_GROUPS = [
       { slug: 'tutoring', name: 'Tutoring' },
       { slug: 'gardening', name: 'Gardening' },
       { slug: 'pet-care', name: 'Pet Care' },
+      { slug: 'cobbler', name: 'Cobbler' },
       { slug: 'other', name: 'Other' },
     ],
   },
@@ -177,7 +179,7 @@ export default function LandingPage() {
             </form>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              {['Plumbing', 'Barber', 'WiFi Setup', 'House Moving', 'Tutoring'].map((item) => (
+              {['Plumbing', 'Barber', 'WiFi Setup', 'House Moving', 'Cobbler'].map((item) => (
                 <button
                   key={item}
                   type="button"
@@ -191,6 +193,27 @@ export default function LandingPage() {
           </div>
 
           <div className="grid gap-4">
+            <div className="relative overflow-hidden rounded-[32px] border border-emerald-200/70 bg-[linear-gradient(145deg,#ffffff_0%,#f0fdf4_45%,#dcfce7_100%)] p-4 shadow-[0_28px_70px_-42px_rgba(5,150,105,0.65)]">
+              <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-emerald-200/40 blur-3xl" />
+              <div className="absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-teal-200/40 blur-3xl" />
+              <div className="relative overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_20px_45px_-30px_rgba(15,23,42,0.35)]">
+                <img
+                  src="/landing-provider-customer.jpg"
+                  alt="A service provider greeting a customer"
+                  className="h-[420px] w-full object-cover object-center"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(6,78,59,0)_0%,rgba(6,78,59,0.88)_100%)] px-6 pb-6 pt-16 text-white">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200">Trusted Connections</p>
+                  <h3 className="mt-2 max-w-md text-2xl font-semibold leading-tight">
+                    Real providers. Real customers. Better first impressions from the first scroll.
+                  </h3>
+                  <p className="mt-3 max-w-lg text-sm leading-6 text-emerald-50/90">
+                    HudumaLink helps people meet reliable service professionals with confidence before the work even begins.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="rounded-[30px] bg-[linear-gradient(150deg,#0c4535_0%,#0a3a2c_55%,#072e22_100%)] p-6 text-white shadow-[0_24px_80px_-40px_rgba(12,69,53,0.9)]">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Escrow Flow</p>
               <div className="mt-5 space-y-3">
